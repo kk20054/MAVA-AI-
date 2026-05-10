@@ -1,0 +1,17 @@
+def main(args: dict) -> dict:
+    import datetime
+
+    today = datetime.date.today()
+    query = args.get('query')
+    new_query = args.get('newQuery')
+
+    # 如果 newQuery 是空字符串，则使用 query，否则使用 newQuery
+    if new_query == "":
+        result_query = query
+    else:
+        result_query = new_query
+
+    return {
+        "today": f"{today}",
+        "query": f"{result_query}"
+    }

@@ -1,0 +1,63 @@
+V10.2 轻量化说明
+
+一、为什么要改
+
+v10/v10.1 的查询解析提示词让模型同时输出：
+- intent/query_type
+- rewritten_query/search_keywords/protected_terms
+- answer_goal
+- time_profile
+- entity_profile
+- classification_confidence
+- rewrite_reason
+- ambiguity_flags
+
+这些字段虽然有助于后续合成，但会显著增加模型理解和生成负担。实际测试中，前置解析从约 10 秒增长到约 1 分钟，主要原因就是输入提示词更长、输出字段更多。
+
+二、V10.2 的平衡方案
+
+保留 v10.1 后续能力，但减轻 01 模型节点：
+
+01 模型只输出 7 个核心字段：
+- intent
+- query_type
+- raw_query
+- rewritten_query
+- search_keywords
+- protected_terms
+- freshness_required
+
+02 脚本继续自动补齐：
+- answer_goal
+- time_profile
+- entity_profile
+- classification_confidence
+- rewrite_reason
+- ambiguity_flags
+- kb_query
+- web_query
+- should_search
+- short_circuit_type
+
+也就是说：模型负责“轻量语义判断和检索改写”，脚本负责“规则化结构补齐”。
+
+三、对工作流的影响
+
+最小替换方案：
+- 只替换 `01_查询解析与参数化提示词 v10.2.txt`
+- 保持 v10.1 的 02、06、07 等脚本不变也可以运行
+
+推荐替换方案：
+- 使用 v10.2 文件夹整套文件
+- 重点仍是 01 轻量提示词 + v10.1 已修复字段兼容的 06-1/06-2
+
+四、预期效果
+
+- 01 模型输出字段减少约一半，输出 token 明显减少。
+- 输入提示词从 v10.1 的长规则版缩短为轻量版。
+- 后续 07 合成仍能拿到完整任务画像，因为 02 会自动补齐。
+
+五、注意事项
+
+- 如果某些模糊问题 01 判断不准，02 的规则兜底仍会二次纠偏。
+- 若追求极致速度，后续可进一步把高频明确问题直接用 02 规则路由，跳过 01 模型；但这需要调整工作流节点，不作为本版默认方案。

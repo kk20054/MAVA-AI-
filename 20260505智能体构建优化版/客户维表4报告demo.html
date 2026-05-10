@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>客户维表4示意</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9dee8;
+      --soft: #f5f7fb;
+      --brand: #8b1e2d;
+      --good: #116b4f;
+      --warn: #9a5b00;
+      --bad: #a33030;
+    }
+    body {
+      margin: 0;
+      background: #eef1f6;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .page {
+      width: 1120px;
+      margin: 28px auto;
+      background: white;
+      box-shadow: 0 12px 36px rgba(16, 24, 40, .12);
+      border: 1px solid #e5e8ef;
+    }
+    header {
+      padding: 30px 34px 18px;
+      border-bottom: 3px solid var(--brand);
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+    }
+    section {
+      padding: 24px 34px 30px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      border-left: 5px solid var(--brand);
+      padding-left: 10px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 12px;
+      margin: 14px 0 16px;
+    }
+    .box {
+      background: var(--soft);
+      border: 1px solid #e4e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .box b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #f2e7ea;
+      color: var(--brand);
+      margin-right: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      vertical-align: middle;
+      word-break: break-word;
+    }
+    th {
+      background: #f1f3f8;
+      text-align: center;
+      font-weight: 700;
+    }
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    td.center {
+      text-align: center;
+    }
+    .positive { color: var(--good); }
+    .warning { color: var(--warn); }
+    .negative { color: var(--bad); }
+    .note {
+      margin-top: 12px;
+      padding: 11px 12px;
+      background: #fff8e8;
+      border: 1px solid #f0d392;
+      border-radius: 6px;
+      color: #5f4400;
+    }
+    .analysis {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 13px;
+    }
+    .analysis p {
+      margin: 7px 0;
+    }
+    .footer {
+      padding: 14px 34px 26px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>客户经理经营综合诊断（客户维表4示意）</h1>
+      <div class="meta">客户经理：示例客户经理 | 数据截止：2025年12月31日 | 币种：港元 | 口径：财会系统 AC-OIC 归集</div>
+    </header>
+
+    <section>
+      <h2>4、客户维贡献及资产负债明细</h2>
+      <p>
+        本表用于说明综合贡献的主要客户来源，补充展示利息净收入、中间业务净收入、财资净收入、存款及贷款规模，便于将报告结论追溯至客户明细。
+        表内排名按综合贡献降序排列，默认展示 Top 10、综合贡献超过10万或存在异常风险标记的客户；其余客户进入“其他客户汇总”，不在正文逐户罗列。
+      </p>
+
+      <div class="summary">
+        <div class="box">
+          <b>覆盖逻辑</b>
+          <span class="tag">Top 10</span><span class="tag">贡献>=10万</span><span class="tag">异常必列</span>
+          <div>零存零贷且综合贡献为0的客户不展示，仅纳入未展示客户统计。</div>
+        </div>
+        <div class="box">
+          <b>本页展示客户</b>
+          10户，覆盖综合贡献 82.4%；另有 286 户合并为其他客户汇总。
+        </div>
+        <div class="box">
+          <b>管理提示</b>
+          客户维用于解释贡献来源，不替代前台管户口径考核。
+        </div>
+      </div>
+
+      <table aria-label="客户维贡献及资产负债明细">
+        <thead>
+          <tr>
+            <th style="width:48px">序号</th>
+            <th style="width:118px">客户编号</th>
+            <th>综合贡献</th>
+            <th>利息净收入</th>
+            <th>中间业务净收入</th>
+            <th>财资净收入</th>
+            <th>存款</th>
+            <th>定期</th>
+            <th>活期</th>
+            <th>贷款</th>
+            <th style="width:100px">关注标记</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="center">1</td><td>C00018291</td><td class="num positive">3,862,000</td><td class="num">2,906,000</td><td class="num">316,000</td><td class="num">640,000</td><td class="num">96,200,000</td><td class="num">58,400,000</td><td class="num">37,800,000</td><td class="num">142,500,000</td><td class="center">核心贡献</td>
+          </tr>
+          <tr>
+            <td class="center">2</td><td>C00074630</td><td class="num positive">2,418,000</td><td class="num">2,235,000</td><td class="num">66,000</td><td class="num">117,000</td><td class="num">21,600,000</td><td class="num">19,800,000</td><td class="num">1,800,000</td><td class="num">118,900,000</td><td class="center warning">定期偏高</td>
+          </tr>
+          <tr>
+            <td class="center">3</td><td>C00033827</td><td class="num positive">1,704,000</td><td class="num">1,122,000</td><td class="num">482,000</td><td class="num">100,000</td><td class="num">43,500,000</td><td class="num">12,400,000</td><td class="num">31,100,000</td><td class="num">56,200,000</td><td class="center">中收贡献</td>
+          </tr>
+          <tr>
+            <td class="center">4</td><td>C00091265</td><td class="num positive">986,000</td><td class="num">1,045,000</td><td class="num">28,000</td><td class="num negative">-87,000</td><td class="num">8,900,000</td><td class="num">7,600,000</td><td class="num">1,300,000</td><td class="num">64,700,000</td><td class="center warning">财资拖累</td>
+          </tr>
+          <tr>
+            <td class="center">5</td><td>C00056118</td><td class="num positive">774,000</td><td class="num">612,000</td><td class="num">142,000</td><td class="num">20,000</td><td class="num">18,400,000</td><td class="num">3,100,000</td><td class="num">15,300,000</td><td class="num">31,600,000</td><td class="center">活期沉淀</td>
+          </tr>
+          <tr>
+            <td class="center">6</td><td>C00007852</td><td class="num positive">522,000</td><td class="num">498,000</td><td class="num">24,000</td><td class="num">0</td><td class="num">3,200,000</td><td class="num">2,900,000</td><td class="num">300,000</td><td class="num">27,800,000</td><td class="center">贷款客户</td>
+          </tr>
+          <tr>
+            <td class="center">7</td><td>C00044391</td><td class="num positive">318,000</td><td class="num">110,000</td><td class="num">208,000</td><td class="num">0</td><td class="num">12,900,000</td><td class="num">0</td><td class="num">12,900,000</td><td class="num">0</td><td class="center">非息机会</td>
+          </tr>
+          <tr>
+            <td class="center">8</td><td>C00067003</td><td class="num positive">186,000</td><td class="num">172,000</td><td class="num">14,000</td><td class="num">0</td><td class="num">5,800,000</td><td class="num">5,500,000</td><td class="num">300,000</td><td class="num">9,200,000</td><td class="center">观察</td>
+          </tr>
+          <tr>
+            <td class="center">9</td><td>C00011429</td><td class="num negative">-72,000</td><td class="num">84,000</td><td class="num">0</td><td class="num negative">-156,000</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">13,700,000</td><td class="center negative">负贡献</td>
+          </tr>
+          <tr>
+            <td class="center">10</td><td>其他客户汇总</td><td class="num">1,936,000</td><td class="num">1,106,000</td><td class="num">324,000</td><td class="num">506,000</td><td class="num">78,300,000</td><td class="num">32,200,000</td><td class="num">46,100,000</td><td class="num">55,900,000</td><td class="center">汇总</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="analysis">
+        <p><b>客户贡献解读：</b>综合贡献主要集中在前五大客户，Top 5 覆盖贡献较高，说明客户经理经营表现受头部客户影响较明显。表4不建议展开所有零售客户，而应优先展示贡献客户、资产负债规模客户、异常负贡献客户和结构代表性客户。</p>
+        <p><b>口径说明：</b>本表客户归集来自财会系统 AC-OIC 账户维度，反映管理会计底数，与前台业务部门管户归属可能存在差异。报告中应明确“本表用于财会口径贡献追溯，不作为前台管户口径唯一认定”。</p>
+      </div>
+
+      <div class="note">
+        展示建议：公司/机构客户经理可默认 Top 10-20；零售客户经理默认 Top 10 + 贡献超过10万 + 负贡献/大额存贷异常客户，其他客户只做汇总，并提供明细下载或下钻入口。
+      </div>
+    </section>
+
+    <div class="footer">
+      Demo 数据为示意。实际接入时建议同时输出展示规则、未展示客户数、未展示客户贡献合计和口径差异提示。
+    </div>
+  </main>
+</body>
+</html>

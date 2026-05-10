@@ -1,0 +1,50 @@
+V10.1 修复说明
+
+一、问题原因
+
+从截图看，工作流节点传入字段为：
+- raw_result
+- user_query
+- rewritten_query
+- query_type
+- freshness_required
+- keywords
+- protected_terms
+
+而 v10 版 06-1/06-2 脚本读取的是：
+- web_result 或 bks_result 或 result
+- search_keywords
+
+因此脚本能够运行但读不到检索结果，最终输出：
+{"final_result":"[]","has_result":false,"diagnostics":"empty_web_results"}
+
+这不是 BKS/Web 检索无结果，而是字段名未兼容。
+
+二、V10.1 修复点
+
+1. 06-1 联网检索多信号筛选
+   - 新增兼容 raw_result、final_result、result、results。
+   - 新增兼容 keywords、keyword、query_keywords。
+   - empty 诊断改为 JSON，输出 input_keys、raw_result_type、raw_result_length，方便定位映射问题。
+
+2. 06-2 BKS 知识库多信号筛选
+   - 新增兼容 raw_result、final_result、result、results。
+   - 新增兼容 keywords、keyword、query_keywords。
+   - empty 诊断改为 JSON，输出 input_keys、raw_result_type、raw_result_length。
+
+3. 06-3 检索结果融合
+   - 新增兼容 web_final_result、bks_final_result、kb_final_result、web_result、bks_result。
+
+三、工作流接入建议
+
+你当前截图里的字段映射可以保持不变：
+- raw_result → 继续传检索原始输出
+- keywords → 继续传关键词数组字符串
+- protected_terms → 继续传保护词数组字符串
+
+只需要将两个多信号筛选脚本替换为 v10.1：
+- 06-1_联网检索多信号筛选 v10.1.py
+- 06-2_BKS知识库多信号筛选 v10.1.py
+
+如后续 06-3 融合节点仍为空，再替换：
+- 06-3_检索结果融合与预算控制 v10.1.py

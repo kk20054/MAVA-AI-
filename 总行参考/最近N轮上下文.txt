@@ -1,0 +1,64 @@
+import json
+import re
+
+def main(args: dict) -> dict:
+    # 从参数中获取对话历史和返回条数
+    conversation_history = args.get('conversation_history', [])
+    num = int(args.get('num', 3))  # 默认取3条
+
+    # 1. 构建对话对（用户提问+有效回答）
+    filtered_pairs = []
+    i = 0
+    while i < len(conversation_history):
+        if conversation_history[i]["role"] == "user":
+            user_content = conversation_history[i]["content"]
+
+            # 查找有效回答
+            j = i + 1
+            assistant_content = None
+            while j < len(conversation_history):
+                if conversation_history[j]["role"] == "assistant":
+                    content = conversation_history[j]["content"].strip()
+
+                    # 清理回答中的嵌套JSON
+                    clean_content = re.sub(r'--------------------------------------------------\n\{.*?\}', '', content, flags=re.DOTALL)
+                    clean_content = clean_content.strip()
+
+                    # 过滤无效内容
+                    if clean_content and not clean_content.startswith("<step>") and not clean_content.startswith("\n\n\n"):
+                        assistant_content = clean_content
+                        break
+
+                j += 1
+
+            if assistant_content:
+                filtered_pairs.append({
+                    "user": user_content,
+                    "assistant": assistant_content
+                })
+
+        i += 1
+
+    # 2. 去重处理（保留最新出现的对话）
+    seen = set()
+    unique_pairs = []
+    for pair in reversed(filtered_pairs):  # 逆序处理保留最新
+        key = (pair["user"], pair["assistant"])
+        if key not in seen:
+            seen.add(key)
+            unique_pairs.append(pair)
+
+    # 3. 取指定数量的有效对话并重构为问答对
+    final_pairs = list(reversed(unique_pairs))[-num:]
+    result = [
+        {
+            "question": pair["user"],
+            "answer": pair["assistant"]
+        }
+        for pair in final_pairs
+    ]
+
+    # 返回标准格式
+    return {
+        "conversation_history": json.dumps({"最近3轮上下文": result}, ensure_ascii=False, indent=2)
+    }

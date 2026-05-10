@@ -1,0 +1,85 @@
+def main(args: dict) -> dict:
+    import re
+    import ast
+    import json
+
+    analysis_str = str(args.get('analysis_raw', ''))
+    if not analysis_str or analysis_str.strip() == '':
+        return {"financial_highlights": "", "key_facts": ""}
+
+    # ── 多策略提取字典 ──
+    dict_str = None
+
+    # 策略1: ```python 代码块
+    m1 = re.search(r'```(?:python)?\s*(.*?)```', analysis_str, re.DOTALL)
+    if m1:
+        inner = m1.group(1).strip()
+        m1b = re.search(r'\{[\s\S]*\}', inner)
+        if m1b:
+            dict_str = m1b.group(0)
+
+    # 策略2: 直接找最外层 { ... }
+    if not dict_str:
+        m2 = re.search(r'\{[\s\S]*\}', analysis_str)
+        if m2:
+            dict_str = m2.group(0)
+
+    if not dict_str:
+        return {"financial_highlights": "", "key_facts": ""}
+
+    # ── 清洗常见LLM输出问题 ──
+    # 处理可能的尾部多余逗号
+    dict_str = re.sub(r',\s*\]', ']', dict_str)
+    dict_str = re.sub(r',\s*\}', '}', dict_str)
+
+    # ── 解析 ──
+    content = None
+    try:
+        content = json.loads(dict_str)
+    except Exception:
+        pass
+    if content is None:
+        try:
+            content = ast.literal_eval(dict_str)
+        except Exception:
+            pass
+
+    if not isinstance(content, dict):
+        return {"financial_highlights": "", "key_facts": ""}
+
+    # ── 提取 ──
+    financial_highlights = ""
+    key_facts = ""
+
+    for key, value in content.items():
+        if not isinstance(key, str):
+            continue
+        cleaned_key = re.sub(r'^[一二三四五六七八九十\d]+[、.\s]*', '', key)
+
+        items = []
+        if isinstance(value, list):
+            items = [str(item).strip() for item in value if item]
+        elif value:
+            items = [str(value).strip()]
+
+        formatted = []
+        for item in items:
+            item = item.strip()
+            if not item:
+                continue
+            if not item.startswith('-'):
+                item = f'-{item}'
+            formatted.append(item)
+
+        text = "<br>".join(formatted)
+
+        # 兼容新旧格式：经营情况/亮点 → financial_highlights；建议/关注 → key_facts
+        if any(kw in cleaned_key for kw in ['经营情况', '亮点']):
+            financial_highlights = text
+        elif any(kw in cleaned_key for kw in ['建议', '关注']):
+            key_facts = text
+
+    return {
+        'financial_highlights': financial_highlights,
+        'key_facts': key_facts
+    }

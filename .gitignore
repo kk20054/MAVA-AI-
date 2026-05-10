@@ -1,0 +1,63 @@
+# IDE and editor metadata
+.idea/
+.vscode/
+*.iml
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Office temporary/lock files
+~$*
+*.tmp
+
+# Reference materials and binary documents kept local
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.pdf
+*.zip
+*.7z
+*.rar
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Browser profiles and crash artifacts generated during local testing
+**/chrome_profile/
+**/edge_profile/
+**/chrome_profile.zip
+**/Crashpad/
+*.dmp
+*.pma
+
+# Build and packaging outputs
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log

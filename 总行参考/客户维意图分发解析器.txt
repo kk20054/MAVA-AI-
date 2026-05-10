@@ -1,0 +1,37 @@
+import json
+from typing import Dict, Any, List
+
+def main(args: Dict[str, Any]) -> Dict[str, Any]:
+    input_str = args.get("input")
+    if not input_str:
+        raise ValueError("Missing 'input' in the arguments")
+    query = args.get("query")
+    if not query:
+        raise ValueError("Missing 'query' in the arguments")
+    
+    # 去除 Markdown 的代码块标记
+    input_str = input_str.strip().strip("```json").strip().strip("```").strip()
+
+    # 解析 JSON 字符串
+    data = json.loads(input_str)
+
+    # 提取所需的两个字段
+    calls = data.get("calls", [])
+    query_search = data.get("web_search", {}).get("query")
+
+    # 如果 calls 为空，则设置为联网搜索并使用输入的 query
+    if not calls:
+        calls = ["联网搜索"]
+        query_search = query
+        
+    # 构造返回结果
+    result = {
+        "calls": calls,
+        "querySearch": query_search
+    }
+
+    # 如果 querySearch 存在且不为空，则在 calls 最后添加 "联网搜索"
+    if query_search:
+        result["calls"].append("联网搜索")
+
+    return result

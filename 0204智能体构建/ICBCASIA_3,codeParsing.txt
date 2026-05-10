@@ -1,0 +1,113 @@
+def validate_agent_output(args: dict) -> dict:
+    """
+    校验 AI 生成的 JSON 对象中的 'code'。
+    逻辑更新：
+    1. 查数模式 (Request_type=0): 严格校验，无效代码被移除，若结果为空则 FAILED。
+    2. 报告模式 (Request_type=1): 宽容模式，若有效代码为空，则自动回填对应类别(Type)下的所有指标，确保报告能生成。
+    
+    :param args: {
+        "ai_output": dict,   # Planner Agent 生成的 JSON
+        "mapping_table": dict # 上一步生成的 Mapping Table
+    }
+    :return: {
+        "validated_output": dict, 
+        "status": str,            
+        "message": str            
+    }
+    """
+    
+    ai_output = args.get('ai_output', {})
+    mapping_table = args.get('mapping_table', {})
+    
+    # 0. 获取请求类型 (默认为查数 '0')
+    request_type = str(ai_output.get('Request_type', '0'))
+
+    # 1. 提取所有合法的 Code (建立白名单)
+    valid_code_set = set()
+    # 辅助结构：按 type 分组的 code 列表，用于报告模式的自动填充
+    type_to_codes_map = {} 
+    
+    for category_key, category_data in mapping_table.items():
+        indicators = category_data.get('indicators', [])
+        type_codes = []
+        for item in indicators:
+            code = item.get('code')
+            if code:
+                valid_code_set.add(code)
+                type_codes.append(code)
+        type_to_codes_map[category_key] = type_codes
+
+    # 2. 获取 AI 输出的 Code 列表
+    agent_codes = ai_output.get('code', [])
+    # 容错：如果 agent 没返回 code 字段，初始化为空列表
+    if agent_codes is None:
+        agent_codes = []
+        
+    if not isinstance(agent_codes, list):
+        return {
+            "validated_output": ai_output,
+            "status": "FAILED",
+            "message": "AI Output 'code' field is not a list."
+        }
+
+    # 3. 校验逻辑 (过滤无效 Code)
+    valid_codes = []
+    invalid_codes = []
+    
+    for code in agent_codes:
+        if code in valid_code_set:
+            valid_codes.append(code)
+        else:
+            invalid_codes.append(code)
+    
+    # 4. 状态判定逻辑
+    status = "SUCCESS"
+    message = "All codes validated."
+    
+    # === 核心修改：针对报告模式的兜底逻辑 ===
+    if not valid_codes:
+        if request_type == '1':
+            # 场景：生成报告，但 AI 没给 Code 或者给的 Code 全错了
+            # 策略：自动回填所有指标 (Auto-fill)
+            
+            # 尝试根据 AI 输出的 'type' (如 Revenue) 缩小范围
+            target_types = ai_output.get('type', [])
+            
+            # 如果 AI 指定了 type (例如只看 Revenue)，则只回填该 type 下的指标
+            if target_types and isinstance(target_types, list):
+                for t_key in target_types:
+                    if t_key in type_to_codes_map:
+                        valid_codes.extend(type_to_codes_map[t_key])
+            
+            # 如果此时还是空 (AI 没指定 type 或 type 也是错的)，则回填 Mapping Table 所有指标
+            if not valid_codes:
+                valid_codes = list(valid_code_set)
+            
+            status = "SUCCESS" # 修正为成功，因为我们进行了自动修复
+            message = f"Report Mode Auto-fill: Original codes invalid/empty {invalid_codes}. Auto-populated with {len(valid_codes)} indicators."
+        
+        else:
+            # 场景：查数模式 (Request_type=0)
+            # 策略：严格报错，因为查数必须精确
+            status = "FAILED"
+            message = f"CRITICAL: Query Mode requires specific valid codes. Invalid codes found: {invalid_codes}."
+
+    elif invalid_codes:
+        # 场景：有部分有效，部分无效
+        status = "PARTIAL_SUCCESS"
+        message = f"WARNING: Removed invalid codes: {invalid_codes}. Proceeding with {len(valid_codes)} valid codes."
+
+    # 5. 重构输出
+    validated_output = ai_output.copy()
+    validated_output['code'] = valid_codes
+    
+    # 确保 Request_type 存在于输出中
+    validated_output['Request_type'] = request_type
+    
+    ret = {
+        "validated_output": validated_output,
+        "status": status,
+        "message": message
+    }
+    
+    return ret

@@ -1,0 +1,43 @@
+def main(args: dict) -> dict:
+    """
+    根据输入的 tool 值，返回对应的 mainIntent、subIntent 和 tertiaryIntent
+    :param args: 输入参数字典，包含 'tool' 字段
+    :return: 包含 mainIntent、subIntent、tertiaryIntent 的字典
+    """
+    # 默认值
+    default_result = {
+        "mainIntent": "02",
+        "subIntent": "004",
+        "tertiaryIntent": "00000"
+    }
+
+    # 获取输入的 tool 值
+    tool = args.get("tool", "")
+
+    # 映射关系: tool -> (mainIntent, subIntent, tertiaryIntent)
+    intent_map = {
+        "客户维-画像查询": ("02", "001", "00400"),
+        "客户维-基本信息": ("02", "002", "00400"),
+        "客户维-账户信息": ("02", "003", "00400"),
+        "客户维-金融资产": ("02", "004", "00400"),
+        "客户维-客户存款": ("02", "004", "00401"),
+        "客户维-客户贷款": ("02", "004", "00402"),
+        "客户维-客户中收": ("02", "004", "00403"),
+        "客户维-代发工资": ("02", "004", "00404"),
+        "客户维-关系推荐": ("02", "005", "00400"),
+        "客户维-产品持有": ("02", "006", "00400"),
+        "客户维-客户贡献": ("02", "009", "00400"),
+        "客户维-资金流向": ("02", "010", "00400"),
+        "客户维-营销周态统计": ("02", "015", "00400")
+    }
+
+    # 如果 tool 在映射表中，更新默认值
+    if tool in intent_map:
+        mainIntent, subIntent, tertiaryIntent = intent_map[tool]
+        default_result.update({
+            "mainIntent": mainIntent,
+            "subIntent": subIntent,
+            "tertiaryIntent": tertiaryIntent
+        })
+
+    return default_result

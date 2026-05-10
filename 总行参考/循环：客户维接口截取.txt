@@ -1,0 +1,58 @@
+import json
+
+def main(args: dict) -> dict:
+    """
+    处理 dataInfo 字段，过滤无效值，并统一输出格式
+
+    Args:
+        args (dict): 包含 msg、dataScene、input 字段的输入参数
+
+    Returns:
+        dict: 包含处理结果的字典
+    """
+    # 获取独立参数
+    msg = args.get('msg', "")
+    data_scene = args.get('datascene', "")
+    input_data = args.get('input', {})
+
+    # 如果 msg 为 "无行内画像查看权限"，只返回 msg 和 dataScene
+    if msg == "无行内画像查看权限":
+        return {
+            "output": json.dumps({
+                "msg": msg,
+                "dataScene": data_scene
+            }, ensure_ascii=False)
+        }
+
+    # 获取 dataInfo
+    data_info_list = input_data.get('dataInfo', [])
+
+    # 处理 dataInfo，过滤无效值
+    processed_data_info = []
+    for item in data_info_list:
+        # 如果 item 是字符串，尝试解析为字典
+        if isinstance(item, str):
+            try:
+                item_dict = json.loads(item)
+            except json.JSONDecodeError:
+                continue
+        else:
+            item_dict = item
+
+        # 过滤掉无效值：None、"0.00"、""、"null"
+        filtered = {
+            k: v for k, v in item_dict.items()
+            if v is not None and v not in ("0.00", "", "null")
+        }
+        processed_data_info.append(filtered)
+
+    # 构造输出结构
+    result = {
+        "msg": msg,
+        "dataScene": data_scene,
+        "dataInfo": processed_data_info
+    }
+
+    return {
+        "output": json.dumps(result, ensure_ascii=False)
+    }

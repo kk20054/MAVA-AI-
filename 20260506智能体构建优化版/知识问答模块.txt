@@ -1,0 +1,1378 @@
+00：组装映射表
+import re
+import datetime
+from datetime import timedelta
+def main(args: dict) -> dict:
+    """
+    运行代码节点会调用此函数
+    :param args: 输入固定为args字典类型，kv为输入参数键值对
+    :return: 输出参数为字典类型，kv为输出参数键值对
+    """
+    
+    
+    # 1.1 指标层级定义 (Indicator Hierarchy)
+    revenue_key_prefix_dict = {
+        "MA_A1_0":"一、营业净收入",
+        "MA_A11_0":"（一）净利息收入",
+        "MA_A111_0":"（1）贷款净利息收入",
+        "MA_A111_1":"1.房产按揭贷款",
+        "MA_A111_2":"2.房产按揭贷款 - 員工",
+        "MA_A111_3":"3.个人贷款",
+        "MA_A111_4":"4.税务贷款",
+        "MA_A111_5":"5.透支",
+        "MA_A111_6":"6.定期循环贷款",
+        "MA_A111_7":"7.银团贷款",
+        "MA_A111_8":"8.贸易融资",
+        "MA_A111_9":"9.贸易融资 - CMB分润",
+        "MA_A111_10":"10.支票贴现",
+        "MA_A111_11":"11.租赁贷款",
+        "MA_A111_12":"12.信用卡贷款",
+        "MA_A111_13":"13.保理",
+        "MA_A111_14":"14.新股认购/保证金贷款",
+        "MA_A111_15":"15.其他贷款",
+        "MA_A111_16":"16.不良贷款",
+        "MA_A113_0":"（3）存拆同业净利息收入",
+        "MA_A114_0":"（4）客户存款净利息收入",
+        "MA_A1141_0":"1.低息存款",
+        "MA_A11411_0":"a.活期存款",
+        "MA_A11411_1":"i.活期存款 - 非员工",
+        "MA_A11411_2":"ii.活期存款 - 员工",
+        "MA_A1141_1":"b.储蓄存款",
+        "MA_A1142_0":"2.定期存款",
+        "MA_A1142_1":"a.定期存款 - 非CMB分润",
+        "MA_A1142_2":"b.定期存款 - CMB分润",
+        "MA_A115_1":"（5）发行存款证",
+        "MA_A117_0":"（7）同业存拆利息支出",
+        "MA_A12_0":"（二）中间业务净收入",
+        "MA_A12_1":"其中：1.收费及佣金收入",
+        "MA_A12_2":" 2.收费及佣金支出",
+        "MA_A13_0":"（三）财资业务净收入",
+        "MA_A13_1":"（1）交易业务净收入",
+        "MA_A13_2":"（2）以FVPL入账金融资产及负债之净收益",
+        "MA_D1_0":"四、拨备前利润",
+        "MA_E1_0":"五、资产减值(损失)/回拨",
+        "MA_E1_1":"（一）个别计提",
+        "MA_E1_2":"（二）组合计提",
+        "MA_E1_3":"（三）回拨",
+        "MA_F1_0":"六、拨备后利润 (成本分摊前)",
+        "MA_G1_0":"七、成本分摊",
+        "MA_G1_1":"（一）中后台成本分摊",
+        "MA_G1_2":"（二）财务池成本分摊",
+        "MA_H1_0":"八、税前利润",
+        "MA_H2_1":"减：所得税及递延税支出",
+        "MA_J1_0":"九、税后净利润",
+        "MA_K1_0":"影子收入",
+        "MA_K1_1":"1.利息影子收入",
+        "MA_K1_2":"2.非息影子收入"
+    }
+
+    asset_key_prefix_dict = {
+        "MA_M1_0":"一、资产",
+        "MA_M11_0":"（一）贷款",
+        "MA_M111_0":"（1）正常贷款",
+        "MA_M111_1":"1.房产按揭贷款",
+        "MA_M111_2":"2.房产按揭贷款 - 员工",
+        "MA_M111_3":"3.个人贷款",
+        "MA_M111_4":"4.税务贷款",
+        "MA_M111_5":"5.透支",
+        "MA_M111_6":"6.定期循环贷款",
+        "MA_M111_7":"7.银团贷款",
+        "MA_M111_8":"8.贸易融资",
+        "MA_M111_9":"9.支票贴现",
+        "MA_M111_10":"10.租赁贷款",
+        "MA_M111_11":"11.信用卡贷款",
+        "MA_M111_12":"12.保理",
+        "MA_M111_13":"13.新股认购/保证金贷款",
+        "MA_M111_14":"14.其他贷款",
+        "MA_M112_1":"（2）不良贷款",
+        "MA_M12_0":"（二）债券投资",
+        "MA_M12_1":"（1）AC债券投资",
+        "MA_M12_2":"（2）FVOCI债券投资",
+        "MA_M12_3":"（3）指定FVPL债券投资",
+        "MA_M12_4":"（4）FVTPL债券投资",
+        "MA_M12_5":"（5）交易性债券投资",
+        "MA_M13_0":"（三）拨备余额",
+        "MA_M13_1":"（1）组合",
+        "MA_M13_2":"（2）个别",
+        "MA_M14_0":"（四）存拆同业",
+        "MA_M14_1":"（1）存放同业",
+        "MA_M14_2":"（2）存拆同业",
+        "MA_M14_3":"（3）REVERSE REPO"
+    }
+
+    liab_key_prefix_dict = {
+        "MA_N1_0":"二、负债",
+        "MA_N11_0":"（一）客户存款",
+        "MA_N111_0":"（1）低息存款",
+        "MA_N1111_0":"1.活期存款",
+        "MA_N1111_1":"a.活期存款 - 非员工",
+        "MA_N1111_2":"b.活期存款 - 员工",
+        "MA_N111_2":"2.储蓄存款",
+        "MA_N112_1":"（2）定期存款",
+        "MA_N12_1":"（二）发行存款证",
+        "MA_N13_0":"（三）发行债券",
+        "MA_N13_1":"（1）发行其他债券",
+        "MA_N13_2":"（2）发行后偿债券",
+        "MA_N13_3":"（3）发行CLN",
+        "MA_N13_4":"（4）发行ELN",
+        "MA_N14_0":"（四）同业存放",
+        "MA_N14_1":"（1）同业存放",
+        "MA_N14_2":"（2）同业存拆",
+        "MA_N14_3":"（3）REPO"
+    }
+
+    # 1.2 度量维度定义 (Metrics Definition)
+    revenue_metrics = {
+        'MA_MTD_BAL':'MTD_月累计',
+        'MA_YTD_BAL':'YTD_年累计'
+    }
+
+    asset_liab_metrics = {
+        'MA_BAL':'BAL_月时点余额',
+        'MA_MTD_BAL':'MTD_月日均余额',
+        'MA_YTD_BAL':'YTD_年日均余额'
+    }
+    
+    def parse_hierarchy(data_dict):
+        """
+        自动解析带有序号的中文指标名，生成层级结构 (Code, Name, Level, Parent)
+        """
+        sorted_items = list(data_dict.items())
+        
+        hierarchy_list = []
+        stack = [] # 栈用于追踪父节点：[(level, code), ...]
+        
+        for code, full_name in sorted_items:
+            name_stripped = full_name.strip()
+            clean_name = name_stripped
+            level = 0
+            
+            if re.match(r'^[一二三四五六七八九十]+、', name_stripped):
+                level = 1
+                clean_name = re.sub(r'^[一二三四五六七八九十]+、', '', name_stripped)
+            elif re.match(r'^（[一二三四五六七八九十]+）', name_stripped) or re.match(r'^减：', name_stripped):
+                level = 2
+                clean_name = re.sub(r'^（[一二三四五六七八九十]+）', '', name_stripped).replace("减：", "")
+            elif re.match(r'^（\d+）', name_stripped):
+                level = 3
+                clean_name = re.sub(r'^（\d+）', '', name_stripped)
+            elif re.match(r'^\d+\.', name_stripped) or re.match(r'^其中：\d+\.', name_stripped):
+                level = 4
+                clean_name = re.sub(r'^其中：', '', name_stripped)
+                clean_name = re.sub(r'^\d+\.', '', clean_name)
+            elif re.match(r'^[a-z]+\.', name_stripped):
+                level = 5
+                clean_name = re.sub(r'^[a-z]+\.', '', name_stripped)
+            elif re.match(r'^[ivx]+\.', name_stripped):
+                level = 6
+                clean_name = re.sub(r'^[ivx]+\.', '', name_stripped)
+            else:
+                level = stack[-1][0] + 1 if stack else 1
+
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            
+            parent_code = stack[-1][1] if stack else None
+            stack.append((level, code))
+            
+            hierarchy_list.append({
+                "code": code,
+                "name": clean_name.strip(),
+                "level": level,
+                "parent_code": parent_code
+            })
+            
+        return hierarchy_list
+
+    
+    revenue_structured = parse_hierarchy(revenue_key_prefix_dict)
+    asset_structured = parse_hierarchy(asset_key_prefix_dict)
+    liab_structured = parse_hierarchy(liab_key_prefix_dict)
+
+    # 4. 组装 Mapping Table
+    mapping_table = {
+        "Revenue": {
+            "type_cn": "损益类/收入类",
+            "indicators": revenue_structured,
+            "available_metrics": revenue_metrics
+        },
+        "Assets": {
+            "type_cn": "资产类",
+            "indicators": asset_structured,
+            "available_metrics": asset_liab_metrics
+        },
+        "Liabilities": {
+            "type_cn": "负债类",
+            "indicators": liab_structured,
+            "available_metrics": asset_liab_metrics
+        }
+    }
+
+    
+    # 获取传入日期，默认为 ''
+    current_time_str = args.get('currentTime', '')
+    if current_time_str:
+        current_date = datetime.datetime.strptime(current_time_str[:10], "%Y-%m-%d").date()
+        current_date_str = current_date.strftime("%Y-%m-%d")
+    else:
+        current_date = datetime.date.today()
+        current_date_str = current_date.strftime("%Y-%m-%d")
+
+    # 定义获取月末的函数
+    def get_month_end(year, month):
+        if month == 12:
+            next_month = datetime.date(year + 1, 1, 1)
+        else:
+            next_month = datetime.date(year, month + 1, 1)
+        return next_month - datetime.timedelta(days=1)
+
+    # 定义月份减法函数
+    def subtract_months(date, months):
+        year = date.year
+        month = date.month
+    
+        month -= months
+        while month <= 0:
+            month += 12
+            year -= 1
+    
+        if month == 12:
+            next_month = datetime.date(year + 1, 1, 1)
+        else:
+            next_month = datetime.date(year, month + 1, 1)
+        last_day_of_month = (next_month - datetime.timedelta(days=1)).day
+        day = min(date.day, last_day_of_month)
+    
+        return datetime.date(year, month, day)  
+
+    # 计算昨天，上月，上上月，上三月
+    yesterday = current_date - datetime.timedelta(days=1)
+    t_minus_1 = subtract_months(current_date, 1)
+    t_minus_2 = subtract_months(current_date, 2)
+    t_minus_3 = subtract_months(current_date, 3)
+
+    # 计算 T-1, T-2, T-3 月末
+    month_ends = []
+    temp_y, temp_m = current_date.year, current_date.month
+
+    # 获取前三个月的月末（从当前月的前一个月开始）
+    for _ in range(3):
+        if temp_m == 1:
+            temp_m = 12
+            temp_y -= 1
+        else:
+            temp_m -= 1
+        month_ends.append(get_month_end(temp_y, temp_m).strftime("%Y-%m-%d"))
+
+    t_minus_1_end, t_minus_2_end, t_minus_3_end = month_ends
+
+    # 计算去年年末
+    last_year_end = datetime.date(current_date.year - 1, 12, 31).strftime("%Y-%m-%d")
+
+    date_context = {
+        "今天": current_date_str,
+        "昨天": yesterday.strftime("%Y-%m-%d"),
+        "上年末": last_year_end,
+        "上月": t_minus_1.strftime("%Y-%m-%d"),  # 格式化为字符串
+        "上上月": t_minus_2.strftime("%Y-%m-%d"),
+        "上上上月": t_minus_3.strftime("%Y-%m-%d"),
+        "上月末": t_minus_1_end,
+        "上上月末": t_minus_2_end,
+        "上上上月末": t_minus_3_end
+    }
+
+    prod_mapping_table = [
+        "双边贷款类<span class=\"type\">(公司)</span>",
+        "信用卡现金分期贷款",
+        "贸易融资类<span class=\"type\">(资产相关)</span>",
+        "定期/循环贷款类<span class=\"type\">(零售)</span>",
+        "结构性融资",
+        "银团贷款",
+        "房产按揭类<span class=\"type\">(零售)</span>",
+        "托管类",
+        "信用卡类",
+        "资产管理类",
+        "清算类",
+        "对公担保类",
+        "自助银行类",
+        "保险类<span class=\"type\">(公司)</span>",
+        "现金管理类",
+        "资产交易类",
+        "债券承销类",
+        "证券产品类",
+        "财务顾问类",
+        "电子银行类",
+        "基金销售<span class=\"type\">(零售)</span>",
+        "保险类<span class=\"type\">(零售)</span>"
+    ]
+    
+    ret = {
+        "prod_mapping_table": prod_mapping_table,
+        "date_context":date_context,
+        "mapping_table":mapping_table
+
+    }
+    return ret
+
+01：查询解析与参数化
+你是工银亚洲MAVA智能分析助手的查询预处理模块。请严格按以下规则对用户查询进行分类与改写。
+
+═══════════════════════════════════════
+一、系统背景
+═══════════════════════════════════════
+
+本助手有三个功能模块，用户通过点击对话框下方按钮切换：
+- 「查询数据」：查询工银亚洲内部OIC维度/部门维度的经营数据（详见下方「可查指标白名单」）
+- 「生成报告」：一键生成OIC维度的经营分析报告
+- 「知识问答」：解答财会制度、指标口径、系统操作、市场资讯等（当前激活模块）
+
+用户当前处于「知识问答」模块。
+
+═══════════════════════════════════════
+二、「查询数据」模块可查指标白名单
+═══════════════════════════════════════
+
+以下是「查询数据」模块支持的指标范围，仅限工银亚洲本行、OIC维度或部门维度的内部经营数据：
+
+【资产负债类】
+贷款余额、贷款日均余额、存款余额、存款日均余额、管户资产余额、管户负债余额、债券投资余额、同业资产/负债
+
+【损益类】
+利息净收入、中间业务收入（手续费及佣金净收入）、汇兑损益、营业收入、营业利润、税前利润、净利润、成本收入比、资金成本、FTP相关
+
+【资产质量类】
+不良贷款余额、不良贷款率、拨备覆盖率、逾期贷款、关注类贷款
+
+【绩效/KPI类】
+RAROC、EVA、经济利润、利润分成、RWA（风险加权资产）、资本占用
+
+【查询维度】
+仅支持：本人管户（OIC）、指定EE编号的管户、部门维度
+仅支持：时点余额、日均余额、月累计、年累计、同比、环比、较上年末变动
+
+关键限制：
+- 仅限工银亚洲本行数据，不包含中国工商银行（总行/母行/境内行）数据
+- 不包含任何外部市场数据（利率、汇率、指数等）
+- 不包含其他银行的数据
+
+═══════════════════════════════════════
+三、分类规则（按优先级从高到低）
+═══════════════════════════════════════
+
+【A. INTRO —— 问候/功能介绍】
+用户在打招呼、问助手身份、问有什么功能、闲聊、问怎么使用（咨询对象为助手本身功能）。
+示例："你好" "你是谁" "有什么功能" "怎么用" "hi" “你可以怎么生成/查询报告” “你可以怎么生成/查询数据”
+
+【B. GUIDE_DATA —— 应引导至数据查询】
+必须同时满足以下两个条件：
+  条件1：用户想获取具体数值/金额/余额（而非概念解释）
+  条件2：所问指标属于上方「可查指标白名单」中的工银亚洲内部经营数据
+
+典型 GUIDE_DATA 示例：
+- "帮我查上个月贷款余额" → 贷款余额∈白名单 ✓ 要数值 ✓ → GUIDE_DATA
+- "我管户下的利息净收入是多少" → 利息净收入∈白名单 ✓ 要数值 ✓ → GUIDE_DATA
+- "EE001408023的存款情况" → 存款余额∈白名单 ✓ 要数值 ✓ → GUIDE_DATA
+- "看看我上月不良率" → 不良贷款率∈白名单 ✓ 要数值 ✓ → GUIDE_DATA
+
+以下情况不是 GUIDE_DATA，即使出现了"查"字：
+- 用户问的是外部市场数据（HIBOR、LIBOR、LPR、SOFR、汇率、国债收益率、股票指数等） → KNOWLEDGE
+- 用户问的是中国工商银行/总行/母行/境内行的数据 → KNOWLEDGE
+- 用户问的是行业整体数据（如"香港银行业贷款总量"） → KNOWLEDGE
+- 用户问的是概念含义而非具体数值（如"什么是利息净收入""不良率怎么计算"） → KNOWLEDGE
+- 用户问的是其他银行数据 → KNOWLEDGE
+
+【C. GUIDE_REPORT —— 应引导至报告生成】
+用户明确要求生成、导出、编写经营分析报告或诊断报告。
+示例："帮我生成经营报告" "出一份上月的分析报告" "写一份业绩分析"
+
+【D. KNOWLEDGE —— 知识问答（需检索回答）】
+不属于上述A/B/C任何一类的问题，全部归入 KNOWLEDGE。包括但不限于：
+- 概念/定义："什么是利息净收入" "FTP是什么意思"
+- 外部市场数据："HIBOR利率" "今天美元兑港币汇率" "LPR报价"
+- 行内制度/政策："差旅费报销标准" "供应商入库流程" "坏账核销审批流程"
+- 操作指引："怎么在系统里提交报销" "MAVA系统怎么进行核算"
+- 宏观/行业："香港金管局最新政策" "2025年香港GDP"
+- 总行/母行/境内行相关："工商银行总行的净利润" "总行FTP定价政策"
+- 会计准则/监管："HKFRS 9怎么规定" "HKMA对资本充足率的要求"
+- 通用财会知识："坏账准备如何计提" "什么是拨备覆盖率"
+
+═══════════════════════════════════════
+四、易混淆场景判定指南
+═══════════════════════════════════════
+
+| 用户问题 | 正确分类 | 判定理由 |
+|---|---|---|
+| "帮我查一下HIBOR" | KNOWLEDGE | HIBOR是外部市场利率，不在白名单内 |
+| "帮我查一下贷款余额" | GUIDE_DATA | 贷款余额∈白名单，要数值 |
+| "HIBOR是什么" | KNOWLEDGE | 概念解释 |
+| "利息净收入是什么" | KNOWLEDGE | 概念解释（不是要数值） |
+| "我上月利息净收入多少" | GUIDE_DATA | 利息净收入∈白名单，要数值 |
+| "工商银行去年利润多少" | KNOWLEDGE | 总行数据，不在本行查询范围 |
+| "我管户的不良率" | GUIDE_DATA | 不良贷款率∈白名单，要数值 |
+| "香港银行业不良率趋势" | KNOWLEDGE | 行业数据，非本行OIC/部门数据 |
+| "帮我看看上月汇率" | KNOWLEDGE | 汇率是外部市场数据 |
+| "帮我看看上月汇兑损益" | GUIDE_DATA | 汇兑损益∈白名单，要数值 |
+| "FTP利率是多少" | KNOWLEDGE | FTP定价属制度/口径问题 |
+| "我管户的FTP成本" | GUIDE_DATA | FTP相关∈白名单，要数值 |
+| "今天港币利率" | KNOWLEDGE | 外部市场利率 |
+| "差旅费标准" | KNOWLEDGE | 行内制度问题 |
+| "帮我生成上月报告" | GUIDE_REPORT | 报告生成请求 |
+| "LPR最新报价" | KNOWLEDGE | 外部市场利率 |
+| "帮我查总行的存款数据" | KNOWLEDGE | 总行数据不在查询范围内 |
+
+═══════════════════════════════════════
+五、改写规则
+═══════════════════════════════════════
+
+INTRO / GUIDE_DATA / GUIDE_REPORT → rewritten_query 为空字符串，search_keywords 为空数组
+
+KNOWLEDGE → 根据子类型改写：
+- 行内制度/流程类 → 添加"工银亚洲 制度规定"
+- 概念/口径/定义类 → 添加"财务口径 定义"
+- 外部市场数据类 → 添加具体市场名称 + 时间关键词（如"香港""最新"）
+- 操作/系统类 → 添加"操作步骤 流程"
+- 总行/母行类 → 添加"中国工商银行"
+- 会计准则/监管类 → 添加具体准则名称或监管机构
+
+═══════════════════════════════════════
+六、输出格式（严格JSON，不附加任何解释文字）
+═══════════════════════════════════════
+
+{
+  "intent": "INTRO 或 GUIDE_DATA 或 GUIDE_REPORT 或 KNOWLEDGE",
+  "raw_query": "用户原始问题",
+  "rewritten_query": "改写后的查询语句（非KNOWLEDGE为空字符串）",
+  "search_keywords": ["关键词1", "关键词2"]
+}
+
+═══════════════════════════════════════
+七、完整示例
+═══════════════════════════════════════
+
+输入："你好"
+输出：{"intent":"INTRO","raw_query":"你好","rewritten_query":"","search_keywords":[]}
+
+输入："帮我查一下上月的贷款余额"
+输出：{"intent":"GUIDE_DATA","raw_query":"帮我查一下上月的贷款余额","rewritten_query":"","search_keywords":[]}
+
+输入："帮我查一下HIBOR"
+输出：{"intent":"KNOWLEDGE","raw_query":"帮我查一下HIBOR","rewritten_query":"HIBOR 香港银行同业拆息 最新利率","search_keywords":["HIBOR","银行同业拆息","香港利率"]}
+
+输入："今天美元兑港币汇率多少"
+输出：{"intent":"KNOWLEDGE","raw_query":"今天美元兑港币汇率多少","rewritten_query":"美元兑港币 即期汇率 最新报价","search_keywords":["美元港币","汇率","最新报价"]}
+
+输入："什么是利息净收入"
+输出：{"intent":"KNOWLEDGE","raw_query":"什么是利息净收入","rewritten_query":"利息净收入 财务口径 定义","search_keywords":["利息净收入","口径定义","财务指标"]}
+
+输入："我管户上月利息净收入多少"
+输出：{"intent":"GUIDE_DATA","raw_query":"我管户上月利息净收入多少","rewritten_query":"","search_keywords":[]}
+
+输入："帮我生成经营报告"
+输出：{"intent":"GUIDE_REPORT","raw_query":"帮我生成经营报告","rewritten_query":"","search_keywords":[]}
+
+输入："工银亚洲差旅费标准是什么"
+输出：{"intent":"KNOWLEDGE","raw_query":"工银亚洲差旅费标准是什么","rewritten_query":"工银亚洲 差旅费 报销标准 制度规定","search_keywords":["差旅费","报销标准","工银亚洲制度"]}
+
+输入："工商银行去年净利润多少"
+输出：{"intent":"KNOWLEDGE","raw_query":"工商银行去年净利润多少","rewritten_query":"中国工商银行 2025年 净利润 年报数据","search_keywords":["中国工商银行","净利润","年报"]}
+
+输入："LPR最新报价是多少"
+输出：{"intent":"KNOWLEDGE","raw_query":"LPR最新报价是多少","rewritten_query":"LPR 贷款市场报价利率 最新报价","search_keywords":["LPR","贷款市场报价利率","最新"]}
+
+输入："EE001408023的存款余额"
+输出：{"intent":"GUIDE_DATA","raw_query":"EE001408023的存款余额","rewritten_query":"","search_keywords":[]}
+
+输入："坏账准备如何计提"
+输出：{"intent":"KNOWLEDGE","raw_query":"坏账准备如何计提","rewritten_query":"坏账准备 计提方法 会计准则 政策依据","search_keywords":["坏账准备","计提","会计准则"]}
+
+输入："帮我看看上月汇兑损益"
+输出：{"intent":"GUIDE_DATA","raw_query":"帮我看看上月汇兑损益","rewritten_query":"","search_keywords":[]}
+
+输入："帮我看看上月汇率走势"
+输出：{"intent":"KNOWLEDGE","raw_query":"帮我看看上月汇率走势","rewritten_query":"上月 汇率走势 港币 美元","search_keywords":["汇率","走势","港币美元"]}
+
+═══════════════════════════════════════
+当前处理
+═══════════════════════════════════════
+用户查询: {{query}}
+
+
+02：查询改写与意图分别
+def main(args: dict) -> dict:
+    """
+    知识问答链路 - Step 2
+    职责：解析 Step 1 LLM 分类结果 + 规则兜底 + 日期上下文 + 路由决策
+
+    输入 args:
+        query            – 用户原始问题 或 Step 1 LLM 输出的 JSON 字符串
+        classify_result  – （可选）Step 1 LLM 输出的 JSON 字符串
+        currentTime      – （可选）当前时间 YYYY-MM-DD...
+    输出:
+        intent           – INTRO | GUIDE_DATA | GUIDE_REPORT | KNOWLEDGE
+        user_query       – 清洗后的用户原始问题
+        rewritten_query  – 改写后的检索 query（仅 KNOWLEDGE 有值）
+        search_keywords  – 检索关键词列表（仅 KNOWLEDGE 有值）
+        is_intro         – 布尔，True 表示短路（不走检索）
+        kb_query         – 知识库检索用 query
+        web_query        – 联网检索用 query
+        status           – SHORT_CIRCUIT | PROCEED_TO_SEARCH
+        date_context     – 日期上下文 JSON 字符串
+    """
+    import json
+    import re
+    import datetime
+    from datetime import timedelta
+
+    # ════════════════════════════════════════════════════════════
+    # 1. 解析输入参数
+    # ════════════════════════════════════════════════════════════
+
+    raw_query_input = str(args.get('query', '')).strip()
+    classify_result = str(args.get('classify_result', '')).strip()
+    current_time_str = str(args.get('currentTime', '')).strip()
+
+    # ════════════════════════════════════════════════════════════
+    # 2. 尝试从 LLM Step 1 输出中提取结构化分类
+    # ════════════════════════════════════════════════════════════
+
+    user_query = raw_query_input
+    llm_intent = ''
+    rewritten_query = ''
+    search_keywords = []
+
+    def try_parse_llm_json(s):
+        """尝试从字符串中提取 JSON 对象"""
+        if not s:
+            return None
+        s = s.strip()
+        # 处理 markdown 代码块包裹的情况
+        md_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', s, re.DOTALL)
+        if md_match:
+            s = md_match.group(1)
+        # 提取第一个 JSON 对象
+        brace_match = re.search(r'\{[^{}]*\}', s, re.DOTALL)
+        if brace_match:
+            try:
+                return json.loads(brace_match.group())
+            except json.JSONDecodeError:
+                pass
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            return None
+
+    # 优先解析 classify_result，其次尝试 raw_query_input
+    parsed_llm = None
+    for candidate in [classify_result, raw_query_input]:
+        parsed_llm = try_parse_llm_json(candidate)
+        if parsed_llm and isinstance(parsed_llm, dict) and 'intent' in parsed_llm:
+            llm_intent = parsed_llm.get('intent', '').strip().upper()
+            if parsed_llm.get('raw_query'):
+                user_query = parsed_llm['raw_query'].strip()
+            rewritten_query = parsed_llm.get('rewritten_query', '').strip()
+            search_keywords = parsed_llm.get('search_keywords', [])
+            break
+        parsed_llm = None
+
+    # 如果 query 是 JSON 但没 raw_query，user_query 保持原值
+    # 清理 user_query 中可能残留的 JSON
+    if user_query.startswith('{') and user_query.endswith('}'):
+        p = try_parse_llm_json(user_query)
+        if p and 'raw_query' in p:
+            user_query = p['raw_query']
+
+    # 确保 user_query 不为空
+    if not user_query:
+        user_query = raw_query_input
+
+    # ════════════════════════════════════════════════════════════
+    # 3. 规则引擎兜底分类（LLM 分类不可靠时纠正）
+    # ════════════════════════════════════════════════════════════
+
+    q = user_query.strip()
+    q_lower = q.lower()
+
+    # --- INTRO 规则 ---
+    INTRO_PATTERNS = [
+        # 纯问候
+        r'^[\s]*(你好|您好|hi|hello|hey|哈喽|嗨|早上好|下午好|晚上好|早安|午安|晚安)[\s!！。.？?，,]*$',
+        # 问身份
+        r'(你是谁|你是什么|你叫什么|请问你是)',
+        # 问功能（泛化）
+        r'^.{0,4}(你能做什么|有什么功能|能帮我做什么|怎么用|如何使用|使用指引|功能介绍|使用说明)',
+        # 极短无意义输入
+        r'^[\s!！?？。.，,]{0,3}$',
+    ]
+
+    # --- GUIDE_DATA 规则 ---
+    # 排除项：这些关键词出现时，即使句式像查数据，也不应归为 GUIDE_DATA
+    EXTERNAL_MARKET_KEYWORDS = (
+        r'(hibor|libor|sofr|lpr|shibor|prime rate|基准利率|同业拆息|'
+        r'汇率|美元兑|港币兑|人民币兑|即期汇率|远期汇率|'
+        r'国债|收益率曲线|cpi|gdp|pmi|失业率|通胀|'
+        r'恒生指数|上证|道琼斯|标普|纳斯达克|股票|'
+        r'总行|母行|境内行|中国工商银行|工商银行总行|'
+        r'香港银行业|行业整体|全行业|市场整体|'
+        r'金管局|hkma|央行|fed|美联储)'
+    )
+
+    def is_external_query(query_text):
+        """判断是否涉及外部市场数据或非本行数据"""
+        return bool(re.search(EXTERNAL_MARKET_KEYWORDS, query_text.lower()))
+
+    GUIDE_DATA_PATTERNS = [
+        # 明确的查询数据动词 + 工银亚洲内部财务指标名词
+        r'(帮我|请|麻烦|我想|我要|能否|可以).{0,10}(查|看|查询|查看|检索|拉|调|导出).{0,20}(贷款余额|存款余额|日均余额|利息净收入|中间业务收入|手续费|营业收入|营业利润|税前利润|净利润|汇兑损益|不良贷款|不良率|拨备覆盖率|逾期贷款|关注类|RAROC|EVA|经济利润|利润分成|RWA|风险加权|资本占用|成本收入比|FTP成本|管户资产|管户负债)',
+        # 我的/我管户的 + 内部指标
+        r'(我的|我管户|我名下|本人).{0,15}(余额|收入|利润|损益|不良|拨备|贷款|存款|资产|负债|数据|指标|情况|表现)',
+        # EE编号查数据
+        r'EE\s*(?:编号)?\s*\d{6,}.{0,20}(数据|余额|收入|情况|贷款|存款|资产|负债|利润|损益|不良|拨备)',
+        # 查+时间+内部指标
+        r'(查|看).{0,5}(上月|上个月|本月|去年|今年|上季|同比|环比|较上年末|上半年|下半年).{0,15}(余额|收入|损益|贷款|存款|资产|负债|数据|利润|不良|拨备)',
+        # 直接问"xx是多少"但指的是自己管户的具体数值
+        r'(我的|管户).{0,10}(是多少|有多少|多少钱)',
+    ]
+
+    # --- GUIDE_REPORT 规则 ---
+    GUIDE_REPORT_PATTERNS = [
+        r'(帮我|请|麻烦|我想|我要|能否|可以).{0,10}(生成|出|写|制作|导出|做).{0,10}(报告|报表|分析报告|经营报告|诊断报告)',
+        r'(经营|诊断|业绩|绩效|综合).{0,5}(报告|报表|分析)',
+        r'(生成|出|做|写).{0,5}(一份|个).{0,5}(报告|分析)',
+        r'(我要|我想|给我).{0,5}(报告|经营分析)',
+    ]
+
+    # 规则判定
+    rule_intent = ''
+
+    # 极短输入直接归 INTRO
+    if len(q.replace(' ', '')) <= 2:
+        rule_intent = 'INTRO'
+
+    if not rule_intent:
+        for p in INTRO_PATTERNS:
+            if re.search(p, q_lower):
+                rule_intent = 'INTRO'
+                break
+
+    if not rule_intent:
+        for p in GUIDE_REPORT_PATTERNS:
+            if re.search(p, q_lower):
+                rule_intent = 'GUIDE_REPORT'
+                break
+
+    if not rule_intent:
+        for p in GUIDE_DATA_PATTERNS:
+            if re.search(p, q_lower):
+                # 命中了 GUIDE_DATA 的句式，但需检查是否涉及外部数据
+                if is_external_query(q_lower):
+                    # 涉及外部市场/总行数据，不归 GUIDE_DATA
+                    rule_intent = 'KNOWLEDGE'
+                else:
+                    rule_intent = 'GUIDE_DATA'
+                break
+
+    # ════════════════════════════════════════════════════════════
+    # 4. 综合决策：LLM 分类 + 规则兜底
+    #    规则引擎对 INTRO/GUIDE 类的判定优先级高于 LLM
+    #    （因为 LLM 容易把 GUIDE 类误判为 KNOWLEDGE）
+    # ════════════════════════════════════════════════════════════
+
+    VALID_INTENTS = {'INTRO', 'GUIDE_DATA', 'GUIDE_REPORT', 'KNOWLEDGE'}
+
+    if rule_intent in ('INTRO', 'GUIDE_DATA', 'GUIDE_REPORT'):
+        # 规则命中的非知识类，优先采信规则
+        final_intent = rule_intent
+    elif llm_intent in VALID_INTENTS:
+        final_intent = llm_intent
+    elif rule_intent:
+        final_intent = rule_intent
+    else:
+        final_intent = 'KNOWLEDGE'
+
+    # 兼容旧版 LLM 输出 "介绍类" / "知识类"
+    INTENT_ALIAS = {
+        '介绍类': 'INTRO', '知识类': 'KNOWLEDGE',
+        'INTRO': 'INTRO', 'GUIDE_DATA': 'GUIDE_DATA',
+        'GUIDE_REPORT': 'GUIDE_REPORT', 'KNOWLEDGE': 'KNOWLEDGE',
+    }
+    final_intent = INTENT_ALIAS.get(final_intent, final_intent)
+    if final_intent not in VALID_INTENTS:
+        final_intent = 'KNOWLEDGE'
+
+    # ════════════════════════════════════════════════════════════
+    # 5. 日期上下文
+    # ════════════════════════════════════════════════════════════
+
+    if current_time_str:
+        try:
+            current_date = datetime.datetime.strptime(
+                current_time_str[:10], "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            current_date = datetime.date.today()
+    else:
+        current_date = datetime.date.today()
+
+    current_date_str = current_date.strftime("%Y-%m-%d")
+
+    def get_month_end(year, month):
+        if month == 12:
+            nxt = datetime.date(year + 1, 1, 1)
+        else:
+            nxt = datetime.date(year, month + 1, 1)
+        return nxt - timedelta(days=1)
+
+    yesterday = current_date - timedelta(days=1)
+    last_year_end = datetime.date(current_date.year - 1, 12, 31)
+
+    month_ends = []
+    ty, tm = current_date.year, current_date.month
+    for _ in range(3):
+        tm -= 1
+        if tm <= 0:
+            tm += 12
+            ty -= 1
+        month_ends.append(get_month_end(ty, tm))
+
+    date_context = {
+        "今天": current_date_str,
+        "昨天": yesterday.strftime("%Y-%m-%d"),
+        "上年末": last_year_end.strftime("%Y-%m-%d"),
+        "上月末": month_ends[0].strftime("%Y-%m-%d"),
+        "上上月末": month_ends[1].strftime("%Y-%m-%d"),
+        "上上上月末": month_ends[2].strftime("%Y-%m-%d"),
+    }
+
+    # ════════════════════════════════════════════════════════════
+    # 6. 路由输出
+    # ════════════════════════════════════════════════════════════
+
+    is_shortcircuit = final_intent in ('INTRO', 'GUIDE_DATA', 'GUIDE_REPORT')
+
+    if is_shortcircuit:
+        return {
+            "intent": final_intent,
+            "user_query": user_query,
+            "rewritten_query": "",
+            "search_keywords": json.dumps([], ensure_ascii=False),
+            "is_intro": True,
+            "kb_query": "",
+            "web_query": "",
+            "status": "SHORT_CIRCUIT",
+            "date_context": json.dumps(date_context, ensure_ascii=False),
+        }
+
+    # KNOWLEDGE → 走检索
+    final_rewritten = rewritten_query if rewritten_query else user_query
+
+    return {
+        "intent": final_intent,
+        "user_query": user_query,
+        "rewritten_query": final_rewritten,
+        "search_keywords": json.dumps(
+            search_keywords if search_keywords else [],
+            ensure_ascii=False
+        ),
+        "is_intro": False,
+        "kb_query": final_rewritten,
+        "web_query": f"{final_rewritten}（参考日期：{current_date_str}）",
+        "status": "PROCEED_TO_SEARCH",
+        "date_context": json.dumps(date_context, ensure_ascii=False),
+    }
+
+03：判断is_intro
+
+04:if is_intro = false
+BKS_justSearch + WebSearch_public
+问题示例： 最近的HIBOR是多少？ 
+WebSearch_public输出结果：{"msg":"以下是联网搜索结果","result":"[{'content': '#### 2026年5月6日人民币贷款基准利率表（自2026年1月19日起执行）\\n|项目|调整后利率|\\n|:--|:--|\\n|一、短期贷款||\\n|六个月以内（含六个月）|4.35%|\\n|六个月至一年（含一年）|4.35%|\\n|二、中长期贷款||\\n|一至三年（含三年）|4.75%|\\n|三至五年（含五年）|4.75%|\\n|五年以上|4.90%|\\n|三、个人住房公积金贷款||\\n|五年以下（含五年）|2.10%|\\n|五年以上|2.60%|\\n|四、贷款市场报价利率||\\n|1年期LPR|3.00%|\\n|5年期以上LPR|3.50%|\\n|五、常备借贷便利利率||\\n|隔夜|2.25%|\\n|7天|2.40%|\\n|1个月|2.75%|\\n|六、支农、支小再贷款||\\n|3个月|0.95%|\\n|6个月|1.15%|\\n|1年|1.25%|\\n|七、金融稳定再贷款|1.75%|\\n|延期期间|3.77%|\\n|八、再贴现|1.50%|', 'title': '最新银行贷款利率表？最新银行贷款利率是多少？-贷款利率-金投银行频道-金投网', 'url': 'https://bank.cngold.org/c/2026-05-06/c10481482.html', 'relevance': '0.0', 'chatId': 'f5cd534b14b0418f96217cdc4cec9445'}, {'content': '香港银行间同业拆借利率(CNY HIBOR)及变动一览：2026年5月6日据汇通财经观察，2026年5月6日 CNY HIBOR各周期利率大多持平（如表格所示，有6个周期的利率持平)。其中变动幅度最大...', 'title': '人民币香港银行间同业拆借利率(CNY HIBOR)及变动一览：2026年5月6日据汇通财经观察，2026年5月6日 CNY HIBOR各周期利率大多持平（如表格所...', 'url': 'https://www.fx678.com/C/20260506/202605060931072281.html', 'relevance': '0.9891', 'chatId': 'f5cd534b14b0418f96217cdc4cec9445'}, {'content': '2026年2月4日，香港银行同业拆息主要期限利率多数回调，隔夜HIBOR回落至1.27606%，创1月2日以来新低；一周及两周期HIBOR亦触...', 'title': '香港同业拆放利率-百度百科', 'url': 'https://bkso.baidu.com/item/%E9%A6%99%E6%B8%AF%E5%90%8C%E4%B8%9A%E6%8B%86%E6%94%BE%E5%88%A9%E7%8E%87/0?fromModule=lemma_inlink', 'relevance': '0.8747', 'chatId': 'f5cd534b14b0418f96217cdc4cec9445'}, {'content': '香港同业间拆借（1周）利率 日期 利率(%) 涨跌(BP) 2026-04-13 1.4988-3.8180 2026-04-10 1.5370-4.0610 2026-04-09 1.5776 14.3340 2026-04-08 1.4342 2.8330 2026-04-02 1.4059 3.3790 <...', 'title': '银行-东方财富数据中心', 'url': 'https://data.eastmoney.com/shibor/shibor/005,CNH,101.html', 'relevance': '0.7394', 'chatId': 'f5cd534b14b0418f96217cdc4cec9445'}, {'content': '最新的香港银行同业拆息(HIBOR)按揭贷款计划，让您于低息环境可有效减少按揭利息支出，更可享现金回赠，为您节省更多成本。利率基准年化利率 1本行的1个月香港银行同业拆息 (HIBOR ...', 'title': '香港银行同业拆息-中国建设银行', 'url': 'https://mo.ccb.com/hongkong_sc/personal/loans/promotions/mortgage-promotion/index.html', 'relevance': '0.6625', 'chatId': 'f5cd534b14b0418f96217cdc4cec9445'}]","code":"0"}
+
+BKS_justSearch输出结果：{"msg":"成功","result":[{"data":{"snippet":{"title":"全球经济金融周动态（2025.10.27-2025.11.9），两周金融市场动态(4)","content":"||指标|指标含义|上周末收盘价|本周末收盘价|两周涨跌幅|\n|---|---|---|---|---|---|\n|贵全|SOFR SOFR1M SOFR3M SHIBORO/N DR007 CNHHIBORO/N CNHH1BOR1M CNHHIBOR3M HKDHIBORO/N HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限刊率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期四购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业折息3个月离半人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业折息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在岸人民币利差3个月离-在岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|4.22 4.00 3.89 1.32 1.46 1.24 1.60 1.71 3.86 3.43 3.55 -0.08 0.06 0.11 2.45 2.29 0.34|3.92 3.96 3.84 1.33 1.41 1.64 1.71 1.78 2.37 3.05 3.44 0.31 0.18 0.20 2.43 2.26 0.40|-32.00BP-2.91BP-1.59BP0.70BP0.20BP7.42BP 。4.18BP 日4.76BP 154.12BP☐42.66BP-13.13BP6.72BP ☐7.28BP 15.76BP0.19BP-0.59BP11.54BP|\n","referQuery":"","referAnswer":""},"relevance":3.7207031}},{"data":{"snippet":{"title":"全球经济金融周动态（2025.11.10-2025.11.21），两周金融市场动态(4)","content":"||指标|指标含义|上周末收盘价|本同末收盘价|两周涨跌幅|\n|---|---|---|---|---|---|\n|贵全|SOFR SOFR1M SOFR3M SHIBORON DR007 CNHHIBORO/N CNHHIBOR1M CNHHIBOR3M HKDHIBORO/N HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限利率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期回购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业拆息3个月离岸人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业拆息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在岸人民币利差3个月离-在容岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|3.95 3.96 3.87 1.36 1.47 1.63 1.73 1.79 2.09 3.06 3.47 0.27 0.21 0.21 2.44 2.29 0.40|3.91 3.95 3.88 1.32 1.44 1.50 1.74 1.82 1.53 2.50 3.08 0.18 0.22 0.24 2.44 2.30 0.79|-2.00BP -0.30BP 3.51BP -0.70BP 2.7SBP -14.118P 2.67B2 3.45BP 83.92EP 55.14BP -31.70BP -13.41BP 3.37BP 4.05BP 0.40BP 4.11BP 39.22BP|\n","referQuery":"","referAnswer":""},"relevance":3.5175781}},{"data":{"snippet":{"title":"全球经济金融周动态（2026.02.02-2026.02.13），两周金融市场动态(4)","content":"||指标|指标含义|上周末收盘价|本周末收盘价|两周涨跌幅|\n|---|---|---|---|---|---|\n|资全|SOFR SOFR1M SOFR3M SHIBORO/N DR007 CNHHIBORO/N CNHHIBOR1M CNHHIBOR3M HKDHIBORON HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBORSHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限利率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期四购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业拆息3个月离岸人民币的香港银行同业拆息隔夜港元香港银行同业拆自1个月港元香港银行同业拆息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在岸人民币利差3个月离-在岸人民币利差1个月美元-在岸人民币利差3个月美元在岸人民币利差3个月美元-港元利差|3.64 3.67 3.64 1.28 1.46 1.35 1.69 1.72 1.87 2.59 2.78 0.07 0.14 0.14 2.12 2.06 0.86|3.65 3.66 3.65 1.37 1.53 1.56 1.65 1.71 1.85 2.50 2.69 0.20 0.10 0.13 2.11 2.07 0.97|-3.00BP -0.91BP -0.76BP 4.00BP -6.69BP -16.55BP -14.52BP -12.20BP -32.77BP -11.36BP -1402BP -20.55BP -14.42BP -11.30BP -0.81BP 0.14BP 13.25BP|\n","referQuery":"","referAnswer":""},"relevance":3.1191406}},{"data":{"snippet":{"title":"全球经济金融周动态（2026.01.05-2026.01.18），两周金融市场动态(4)","content":"||指标|指标含义|上周末收盘价|本同末收盘价|两周涨跌幅|\n|---|---|---|---|---|---|\n|贵全|SOFR SOFR1M SOFR3M SHIBORO/N DR007 CNHHIBORO/N CNHH1BOR1M CNHHIBOR3M HKDHIBORO/N HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限利率3个月SOFR期限利率隔夜上海银行间用业拆放利率银行间存款类金融机构质押式7天期四购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业拆息3个月盗容人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业拆息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在半人民币利差3个月每-在岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|3.64 3.67 3.65 1.27 1.47 1.63 1.73 1.77 2.88 2.86 2.91 0.36 0.18 0.17 2.11 2.06 0.74|3.66 3.67 3.67 1.33 1.44 1.67 1.89 1.89 1.90 2.84 2.86 0.34 0.33 0.29 2.12 2.07 0.81|-9.00BP -0.91BP 1.99BP -0.20BP 1.44BP 50.53BP 17.21BP 13.73BP S943BP 21.85BP 5.07BP 50.73BP 20.21BP 13.73BP 2.09BP 1.99EP -3.07BP|\n","referQuery":"","referAnswer":""},"relevance":3.1132812}},{"data":{"snippet":{"title":"全球经济金融周动态（2026.03.02.-2026.03.15），两周金融市场动态(4)","content":"||指标|指标含义|上周末收盘价|本同末收盘价|两周涨跌幅|\n|---|---|---|---|---|---|\n|资全|SOFR SOFR1M SOFR3M SHIBORO/N DR007 CNHHIBORON CNHHIBOR1M CNHHIBOR3M HKDHIBORON HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBORIM CNHHIBOR-SHIBOR3M SOFR-SHIBORIM SOFR-SHIBOR3M SOFR-HKDHIBOR3M|黃国担保隔夜融资利率1个月SOFR期限利率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期四购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业拆息3个月离岸人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业拆息3个月港元香港银行同业拆息隔夜寄-在岸人民币利差1个月每-在岸人民币利差3个月离-在岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|3.65 3.67 3.67 1.32 1.41 1.43 1.60 1.66 1.56 2.20 2.47 0.11 0.06 0.11 2.13 2.11 1.20|3.65 3.68 3.68 1.32 1.46 1.49 1.67 1.73 1.60 2.08 2.38 0.17 0.13 0.18 2.15 2.14 1.31|-3.00BP 1.09BP 1.76BP -3.70BP 4.18BP -21.52BP 8.65BP L 5.58BP  95.19BP -33.74BP -20.62BP -17.82BP 10.35BP； 8.28BP il 2.79BP 4.46BP 22.37BP|\n","referQuery":"","referAnswer":""},"relevance":3.0234375}},{"data":{"snippet":{"title":"MA(BS)12A_CI_2018_Final_R，rate loan with a notional amount of HKD 100 million. The loan expires after ten years and the interest rate is HIBOR+3% (payable annually). The current HIBOR rate (which in the example coincides with the risk-free rate) is 2% and the next repricing date is in one year’s time. When including spread components, the total coupon cash flow should be slotted before the next repricing date, and only spread components should be slotted after the next repricing date. When excluding spread components, only the risk-free rate before the next repricing date should be slotted. Coupon cash flows of managed rate positions that are slotted according to the earliest repricing date should be slotted like floating rate positions.  \n                     16\n  These include any interest payment on a tranche of principal that has not yet been repaid or repriced.  17\n  In the case of cash flows with optionality (see section 5.2 of the SPM IR-1 “Interest Rate Risk in the Banking Book”), the cash flows slotted to each time band should be adjusted to take into account the expected prepayment or early withdrawal behaviour. \n18  For interest rate swaps, the coupon cash flows of the floating and fixed rate positions should be slotted in a \nsimilar manner to those of floating and fixed rate loans or deposits. For fixed rate loan or deposit commitments, coupon cash flows only need to be slotted when commercial margins and spread components are included. \n19  The choice should be consistent across all positions and currencies of the institution. However, for derivative \npositions, institutions can assume there are no commercial margins and other spread components. \n20  In the case of floating rate loans subject to prepayment risk, the spread components slotted to each time band \nshould be adjusted to take into account the expected prepayment behaviour.  \n","content":"rate loan with a notional amount of HKD 100 million. The loan expires after ten years and the interest rate is HIBOR+3% (payable annually). The current HIBOR rate (which in the example coincides with the risk-free rate) is 2% and the next repricing date is in one year’s time. When including spread components, the total coupon cash flow should be slotted before the next repricing date, and only spread components should be slotted after the next repricing date. When excluding spread components, only the risk-free rate before the next repricing date should be slotted. Coupon cash flows of managed rate positions that are slotted according to the earliest repricing date should be slotted like floating rate positions.  \n                     16\n  These include any interest payment on a tranche of principal that has not yet been repaid or repriced.  17\n  In the case of cash flows with optionality (see section 5.2 of the SPM IR-1 “Interest Rate Risk in the Banking Book”), the cash flows slotted to each time band should be adjusted to take into account the expected prepayment or early withdrawal behaviour. \n18  For interest rate swaps, the coupon cash flows of the floating and fixed rate positions should be slotted in a \nsimilar manner to those of floating and fixed rate loans or deposits. For fixed rate loan or deposit commitments, coupon cash flows only need to be slotted when commercial margins and spread components are included. \n19  The choice should be consistent across all positions and currencies of the institution. However, for derivative \npositions, institutions can assume there are no commercial margins and other spread components. \n20  In the case of floating rate loans subject to prepayment risk, the spread components slotted to each time band \nshould be adjusted to take into account the expected prepayment behaviour.  \n","referQuery":"","referAnswer":""},"relevance":1.6943359}}],"code":"0"}
+
+06：兜底阈值控制
+06-1 websearch 阈值控制
+import json
+import ast
+import math
+
+def main(args: dict) -> dict:
+    # 获取原始数据和参数
+    raw_result = args.get('web_result', '')
+    base_threshold = float(args.get('threshold', 0.00))
+    try:
+        top_k = int(args.get('top_k', 5))
+    except (ValueError, TypeError):
+        top_k = 5
+    
+    # 处理输入数据（可能是字符串化的JSON）
+    if isinstance(raw_result, str):
+        try:
+            # 解析外层JSON
+            parsed_data = json.loads(raw_result)
+            # 获取真正的结果列表
+            if isinstance(parsed_data, dict) and 'web_result' in parsed_data:
+                results_str = parsed_data['web_result']
+                # 解析内层列表结构（处理单引号问题）
+                try:
+                    results = json.loads(results_str)
+                except json.JSONDecodeError:
+                    results = ast.literal_eval(results_str)
+            else:
+                results = []
+        except (json.JSONDecodeError, SyntaxError):
+            try:
+                # 尝试直接解析
+                results = ast.literal_eval(raw_result)
+                if isinstance(results, dict) and 'web_result' in results:
+                    results = ast.literal_eval(results['web_result'])
+                elif not isinstance(results, list):
+                    results = []
+            except (ValueError, SyntaxError):
+                return {"final_result": "数据格式错误：无法解析搜索结果"}
+    else:
+        results = raw_result
+    
+    # 空结果处理
+    if not results:
+        return {"final_result": "未找到相关信息！"}
+    
+    # 预处理：提取关键字段
+    processed_results = []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+            
+        # 提取relevance（处理字符串/空值）
+        relevance = item.get("relevance")
+        if relevance is None:
+            relevance = 0.0
+        elif not isinstance(relevance, float):
+            try:
+                relevance = float(relevance)
+            except (ValueError, TypeError):
+                relevance = 0.0
+                
+        # 提取content
+        content = item.get("content", "")
+        if not isinstance(content, str):
+            content = ""
+        
+        # 添加到处理后的列表
+        processed_results.append({
+            "relevance": relevance,
+            "content": content[:4000],  # 预截断
+            "raw_data": item  # 保留原始数据
+        })
+    
+    # === 动态阈值筛选逻辑 ===
+    # 步骤1: 基础过滤 (移除低于基础阈值的结果)
+    filtered = [
+        item for item in processed_results
+        if item["relevance"] >= base_threshold
+    ]
+    
+    # 无基础过滤结果时返回原始最高分Top-K
+    if not filtered:
+        sorted_results = sorted(
+            processed_results,
+            key=lambda x: x["relevance"],
+            reverse=True
+        )[:min(top_k, len(processed_results))]
+        return {"final_result": json.dumps(sorted_results, ensure_ascii=False)}
+    
+    # 步骤2: 动态阈值计算
+    scores = [item["relevance"] for item in filtered]
+    sorted_scores = sorted(scores)
+    n = len(sorted_scores)
+    
+    # 计算50%分位数
+    p75_index = 0.5 * (n - 1)
+    floor_idx = math.floor(p75_index)
+    ceil_idx = math.ceil(p75_index)
+    
+    if floor_idx == ceil_idx:
+        p75 = sorted_scores[floor_idx]
+    else:
+        weight = p75_index - floor_idx
+        p75 = (1 - weight) * sorted_scores[floor_idx] + weight * sorted_scores[ceil_idx]
+    
+    # 计算动态阈值
+    max_score = max(scores)
+    dynamic_thresh = max(p75, max_score * 0.8)
+    
+    # 步骤3: 动态阈值筛选
+    high_rel = [
+        item for item in filtered
+        if item["relevance"] >= dynamic_thresh
+    ]
+    
+    # 步骤4: 保底机制
+    if not high_rel:
+        filtered_sorted = sorted(
+            filtered,
+            key=lambda x: x["relevance"],
+            reverse=True
+        )
+        high_rel = filtered_sorted[:min(top_k, len(filtered_sorted))]
+    
+    # 步骤5: 排序并返回Top-K
+    high_rel_sorted = sorted(
+        high_rel,
+        key=lambda x: x["relevance"],
+        reverse=True
+    )[:top_k]
+    
+    return {"final_result": json.dumps(high_rel_sorted, ensure_ascii=False)}
+输出示例：{"final_result":"[{\"relevance\": 0.9891, \"content\": \"香港银行间同业拆借利率(CNY HIBOR)及变动一览：2026年5月6日据汇通财经观察，2026年5月6日 CNY HIBOR各周期利率大多持平（如表格所示，有6个周期的利率持平)。其中变动幅度最大...\", \"raw_data\": {\"content\": \"香港银行间同业拆借利率(CNY HIBOR)及变动一览：2026年5月6日据汇通财经观察，2026年5月6日 CNY HIBOR各周期利率大多持平（如表格所示，有6个周期的利率持平)。其中变动幅度最大...\", \"title\": \"人民币香港银行间同业拆借利率(CNY HIBOR)及变动一览：2026年5月6日据汇通财经观察，2026年5月6日 CNY HIBOR各周期利率大多持平（如表格所...\", \"url\": \"https://www.fx678.com/C/20260506/202605060931072281.html\", \"relevance\": \"0.9891\", \"chatId\": \"f5cd534b14b0418f96217cdc4cec9445\"}}, {\"relevance\": 0.8747, \"content\": \"2026年2月4日，香港银行同业拆息主要期限利率多数回调，隔夜HIBOR回落至1.27606%，创1月2日以来新低；一周及两周期HIBOR亦触...\", \"raw_data\": {\"content\": \"2026年2月4日，香港银行同业拆息主要期限利率多数回调，隔夜HIBOR回落至1.27606%，创1月2日以来新低；一周及两周期HIBOR亦触...\", \"title\": \"香港同业拆放利率-百度百科\", \"url\": \"https://bkso.baidu.com/item/%E9%A6%99%E6%B8%AF%E5%90%8C%E4%B8%9A%E6%8B%86%E6%94%BE%E5%88%A9%E7%8E%87/0?fromModule=lemma_inlink\", \"relevance\": \"0.8747\", \"chatId\": \"f5cd534b14b0418f96217cdc4cec9445\"}}]"}
+
+06-2 BKS search 兜底阈值：
+import json
+import ast
+import math
+
+def main(args: dict) -> dict:
+    """
+    知识问答链路 - Step 3.1
+    对 BKS 知识库返回结果进行动态阈值筛选，输出 top_k 条高相关结果。
+    """
+    raw_result = args.get('bks_result', '')
+    base_threshold = float(args.get('threshold', 0.00))
+    try:
+        top_k = int(args.get('top_k', 3))
+    except (ValueError, TypeError):
+        top_k = 3
+
+    # ── 解析输入 ──
+    results = []
+    if isinstance(raw_result, list):
+        results = raw_result
+    elif isinstance(raw_result, dict):
+        results = raw_result.get("result", raw_result.get("results", []))
+    elif isinstance(raw_result, str):
+        try:
+            parsed = json.loads(raw_result)
+            if isinstance(parsed, list):
+                results = parsed
+            elif isinstance(parsed, dict):
+                results = parsed.get("result", parsed.get("results", []))
+        except json.JSONDecodeError:
+            try:
+                parsed = ast.literal_eval(raw_result)
+                if isinstance(parsed, dict):
+                    results = parsed.get("result", [])
+                elif isinstance(parsed, list):
+                    results = parsed
+            except (ValueError, SyntaxError):
+                return {"final_result": json.dumps([], ensure_ascii=False), "has_result": False}
+
+    if not results:
+        return {"final_result": json.dumps([], ensure_ascii=False), "has_result": False}
+
+    # ── 标准化提取 ──
+    processed = []
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        data = item.get("data", item)  # 兼容扁平结构
+        if not isinstance(data, dict):
+            continue
+
+        relevance = data.get("relevance", data.get("score", 0.0))
+        try:
+            relevance = float(relevance)
+        except (ValueError, TypeError):
+            relevance = 0.0
+
+        content = ""
+        snippet = data.get("snippet", {})
+        if isinstance(snippet, dict):
+            content = str(snippet.get("content", ""))
+        elif isinstance(data.get("content"), str):
+            content = data["content"]
+
+        if not content.strip():
+            continue
+
+        processed.append({
+            "relevance": relevance,
+            "content": content[:6000],
+        })
+
+    if not processed:
+        return {"final_result": json.dumps([], ensure_ascii=False), "has_result": False}
+
+    # ── 动态阈值筛选 ──
+    # 第一轮：基础阈值
+    filtered = [x for x in processed if x["relevance"] >= base_threshold]
+
+    if not filtered:
+        # 低于基础阈值：取 top_k 但标记低置信
+        fallback = sorted(processed, key=lambda x: x["relevance"], reverse=True)[:top_k]
+        for item in fallback:
+            item["low_confidence"] = True
+        return {
+            "final_result": json.dumps(fallback, ensure_ascii=False),
+            "has_result": len(fallback) > 0,
+        }
+
+    # 第二轮：动态阈值（P75 与 max*0.8 取较大值）
+    scores = sorted([x["relevance"] for x in filtered])
+    n = len(scores)
+    p75_idx = 0.75 * (n - 1)
+    fl, cl = math.floor(p75_idx), math.ceil(p75_idx)
+    p75 = scores[fl] if fl == cl else scores[fl] * (1 - (p75_idx - fl)) + scores[cl] * (p75_idx - fl)
+    dynamic_thresh = max(p75, max(scores) * 0.8)
+
+    high_rel = [x for x in filtered if x["relevance"] >= dynamic_thresh]
+    if not high_rel:
+        high_rel = sorted(filtered, key=lambda x: x["relevance"], reverse=True)[:top_k]
+
+    final = sorted(high_rel, key=lambda x: x["relevance"], reverse=True)[:top_k]
+
+    return {
+        "final_result": json.dumps(final, ensure_ascii=False),
+        "has_result": len(final) > 0,
+    }
+输出示例：{"final_result":"[{\"relevance\": 3.7207031, \"content\": \"||指标|指标含义|上周末收盘价|本周末收盘价|两周涨跌幅|\\n|---|---|---|---|---|---|\\n|贵全|SOFR SOFR1M SOFR3M SHIBORO/N DR007 CNHHIBORO/N CNHH1BOR1M CNHHIBOR3M HKDHIBORO/N HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限刊率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期四购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业折息3个月离半人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业折息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在岸人民币利差3个月离-在岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|4.22 4.00 3.89 1.32 1.46 1.24 1.60 1.71 3.86 3.43 3.55 -0.08 0.06 0.11 2.45 2.29 0.34|3.92 3.96 3.84 1.33 1.41 1.64 1.71 1.78 2.37 3.05 3.44 0.31 0.18 0.20 2.43 2.26 0.40|-32.00BP-2.91BP-1.59BP0.70BP0.20BP7.42BP 。4.18BP 日4.76BP 154.12BP☐42.66BP-13.13BP6.72BP ☐7.28BP 15.76BP0.19BP-0.59BP11.54BP|\\n\"}, {\"relevance\": 3.5175781, \"content\": \"||指标|指标含义|上周末收盘价|本同末收盘价|两周涨跌幅|\\n|---|---|---|---|---|---|\\n|贵全|SOFR SOFR1M SOFR3M SHIBORON DR007 CNHHIBORO/N CNHHIBOR1M CNHHIBOR3M HKDHIBORO/N HKDHIBOR1M HKDHIBOR3M CNHHIBOR-SHIBORO/N CNHHIBOR-SHIBOR1M CNHHIBOR-SHIBOR3M SOFR-SHIBOR1M SOFR-SHIBOR3M SOFR-HKDHIBOR3M|美国担保隔夜融资利率1个月SOFR期限利率3个月SOFR期限利率隔夜上海银行间同业拆放利率银行间存款类金融机构质押式7天期回购利率隔夜离岸人民币的香港银行同业拆息1个月离岸人民币的香港银行同业拆息3个月离岸人民币的香港银行同业拆息隔夜港元香港银行同业拆息1个月港元香港银行同业拆息3个月港元香港银行同业拆息隔夜离-在岸人民币利差1个月离-在岸人民币利差3个月离-在容岸人民币利差1个月美元-在岸人民币利差3个月美元-在岸人民币利差3个月美元-港元利差|3.95 3.96 3.87 1.36 1.47 1.63 1.73 1.79 2.09 3.06 3.47 0.27 0.21 0.21 2.44 2.29 0.40|3.91 3.95 3.88 1.32 1.44 1.50 1.74 1.82 1.53 2.50 3.08 0.18 0.22 0.24 2.44 2.30 0.79|-2.00BP -0.30BP 3.51BP -0.70BP 2.7SBP -14.118P 2.67B2 3.45BP 83.92EP 55.14BP -31.70BP -13.41BP 3.37BP 4.05BP 0.40BP 4.11BP 39.22BP|\\n\"}]","has_result":"True"}
+
+07：合成生成与引言兜底
+import json
+
+def main(args: dict) -> dict:
+    """
+    知识问答链路 - Step 4
+    根据意图和检索结果，构建最终 LLM Prompt。
+
+    输入 args:
+        user_query  – 用户原始问题
+        intent              – INTRO | GUIDE_DATA | GUIDE_REPORT | KNOWLEDGE
+        is_intro            – 布尔（兼容旧版）
+        rewritten_query     – 改写后的查询
+        kb_results          – 知识库检索结果（JSON 字符串）
+        web_results         – 联网检索结果（JSON 字符串）
+        date_context        – 日期上下文（JSON 字符串）
+    """
+
+    user_query      = args.get('user_query', '').strip()
+    intent          = args.get('intent', '').strip().upper()
+    is_intro        = args.get('is_intro', False)
+    rewritten_query = args.get('rewritten_query', '').strip()
+    kb_results_raw  = args.get('kb_results', '')
+    web_results_raw = args.get('web_results', '')
+    date_context    = args.get('date_context', '')
+
+    # 兼容布尔型与字符串型 is_intro
+    if isinstance(is_intro, str):
+        is_intro = is_intro.lower() in ('true', '1', 'yes')
+
+    # 若 intent 为空但 is_intro 为 True，回退到旧逻辑
+    if not intent and is_intro:
+        intent = 'INTRO'
+    if not intent:
+        intent = 'KNOWLEDGE'
+
+    # ════════════════════════════════════════════════════════════
+    # 解析检索结果为可读文本
+    # ════════════════════════════════════════════════════════════
+
+    def parse_search_results(raw, label):
+        """将检索结果 JSON 转为可读文本块"""
+        if not raw or str(raw).strip() in ('', '[]', '{}'):
+            return f'（{label}无匹配结果）'
+        try:
+            items = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            return f'（{label}解析异常）'
+        if not isinstance(items, list) or not items:
+            return f'（{label}无匹配结果）'
+
+        blocks = []
+        for i, item in enumerate(items, 1):
+            if not isinstance(item, dict):
+                continue
+            content   = item.get('content', '').strip()
+            relevance = item.get('relevance', '')
+            title     = item.get('title', '')
+            low_conf  = item.get('low_confidence', False)
+
+            if not content:
+                continue
+
+            header = f'[{label}#{i}]'
+            if title:
+                header += f' {title}'
+            if relevance:
+                header += f'（相关度: {relevance}）'
+            if low_conf:
+                header += '（低置信度）'
+            blocks.append(f'{header}\n{content}')
+
+        return '\n\n'.join(blocks) if blocks else f'（{label}无有效内容）'
+
+    kb_text  = parse_search_results(kb_results_raw, '知识库')
+    web_text = parse_search_results(web_results_raw, '联网检索')
+
+    # 判断检索是否有实质内容
+    kb_has_content  = '无匹配结果' not in kb_text and '无有效内容' not in kb_text and '解析异常' not in kb_text
+    web_has_content = '无匹配结果' not in web_text and '无有效内容' not in web_text and '解析异常' not in web_text
+
+    # ════════════════════════════════════════════════════════════
+    # 场景 A: INTRO（问候/功能介绍）
+    # ════════════════════════════════════════════════════════════
+
+    if intent == 'INTRO':
+        intro_prompt = f"""【角色】
+你是工银亚洲MAVA智能分析助手。
+
+【用户输入】
+{user_query}
+
+【任务】
+判断用户意图，从下方模板库中选择最匹配的模板，完整原样输出。
+- 若用户在打招呼或问功能 → 模板A
+- 若用户问怎么使用 → 模板B
+- 若无法判断 → 模板A
+
+【严格规则】
+1. 必须100%原样输出选定模板的全部文字，不得增删改任何内容
+2. 不得在模板前后添加任何额外文字（如"好的""以下是"等）
+3. 直接输出模板内容，禁止输出<模板A：xxx> </模板A>这些标签文本
+
+<模板A：通用问候>
+您好，我是工银亚洲MAVA智能分析助手。我可以协助您完成以下三类工作：
+
+**一、数据查询** ← 请点击下方「查询数据」按钮
+
+支持查询OIC维及部门维的资产负债、损益类指标数据，包括时点余额、日均余额、月累计及年累计等。
+
+> 示例："帮我看一下2026年1月的利息净收入情况"
+
+> 示例："请查询EE编号000000001在去年上半年的存款余额"
+
+
+**二、报告生成** ← 请点击下方「生成报告」按钮
+
+支持一键生成OIC维度的综合经营分析报告，涵盖规模、效益、质量等多维度分析。
+
+> 示例："帮我生成上个月的OIC经营诊断报告"
+
+> 示例："请生成EE编号000000001的2025年度业绩分析报告"
+
+
+**三、知识问答** ← 当前模式
+
+支持解答财会制度、核算口径、系统操作、市场资讯等问题，基于行内知识库及联网检索提供参考。
+
+> 示例："HIBOR利率最新是多少？"
+
+> 示例："工银亚洲本地员工差旅费报销标准是什么？"
+
+
+请告诉我您的具体需求，我将为您提供支持。
+</模板A>
+
+<模板B：使用指引>
+感谢您的咨询。以下是MAVA智能分析助手的使用指引：
+
+本助手通过对话框下方的三个按钮切换功能模式：
+
+**「查询数据」**模式：
+请明确时间范围（如"2026年1月""上月""较上年末"）和指标类型。如需查询特定客户经理的数据，请提供其9位EE编号（如"EE001408023"）。默认查询本人数据。
+
+**「生成报告」**模式：
+支持按月度、季度、半年度、年度生成OIC维度经营诊断报告。默认生成本人报告，如需生成他人报告请注明EE编号。
+
+**「知识问答」**模式（当前）：
+直接输入您的问题即可，系统将自动检索行内知识库和互联网信息为您解答。
+
+请根据您的需求点击对应按钮开始使用。
+</模板B>"""
+
+        return {
+            "final_prompt": intro_prompt,
+            "mode": "INTRO",
+            "direct_response": "",
+        }
+
+    # ════════════════════════════════════════════════════════════
+    # 场景 B: GUIDE_DATA（引导至数据查询）
+    # ════════════════════════════════════════════════════════════
+
+    if intent == 'GUIDE_DATA':
+        guide_data_response = (
+            f"您的问题涉及具体经营数据查询。请点击对话框下方的**「查询数据」**按钮切换至数据查询模式，"
+            f"系统将实时为您检索所需数据。\n\n"
+            f"使用提示：\n"
+            f"- 查询时请明确时间范围（如\"上月\"、\"2026年1月\"、\"较上年末\"）\n"
+            f"- 如需查询特定客户经理的数据，请在查询时注明9位EE编号（如\"EE000000001\"）\n"
+            f"- 默认查询本人管户数据\n\n"
+            f"当前**「知识问答」**模式可解答财会制度、指标口径、市场资讯等知识性问题。如有此类问题，欢迎直接提问。"
+        )
+
+        guide_data_prompt = f"""【任务】原样输出以下内容，不做任何修改或添加：{guide_data_response}"""
+
+        return {
+            "final_prompt": guide_data_prompt,
+            "mode": "GUIDE_DATA",
+            "direct_response": guide_data_response,
+        }
+
+    # ════════════════════════════════════════════════════════════
+    # 场景 C: GUIDE_REPORT（引导至报告生成）
+    # ════════════════════════════════════════════════════════════
+
+    if intent == 'GUIDE_REPORT':
+        guide_report_response = (
+            f"您的问题涉及经营分析报告生成。请点击对话框下方的**「生成报告」**按钮切换至报告生成模式，"
+            f"系统可一键生成OIC维度的综合经营诊断报告。\n\n"
+            f"使用提示：\n"
+            f"- 支持月度、季度、半年度及年度维度\n"
+            f"- 默认生成本人报告，如需生成其他客户经理的报告请注明EE编号\n"
+            f"- 示例：\"帮我生成上个月的经营报告\"\"请生成EE000000001的2025年报告\"\n\n"
+            f"当前**「知识问答」**模式可解答财会制度、指标口径、市场资讯等知识性问题。如有此类问题，欢迎直接提问。"
+        )
+
+        guide_report_prompt = f"""【任务】原样输出以下内容，不做任何修改或添加：{guide_report_response}"""
+
+        return {
+            "final_prompt": guide_report_prompt,
+            "mode": "GUIDE_REPORT",
+            "direct_response": guide_report_response,
+        }
+
+    # ════════════════════════════════════════════════════════════
+    # 场景 D: KNOWLEDGE（知识问答 RAG）
+    # ════════════════════════════════════════════════════════════
+
+    # 根据检索情况动态调整提示策略
+    if kb_has_content and web_has_content:
+        source_instruction = (
+            '本次检索同时命中了内部知识库和外部联网结果。\n'
+            '优先级：内部知识库 > 联网检索。\n'
+            '对于工银亚洲行内制度、流程、口径等问题，以内部知识库为准。\n'
+            '对于市场资讯、宏观数据、行业通识等问题，可综合两个来源。'
+        )
+    elif kb_has_content:
+        source_instruction = (
+            '本次仅内部知识库命中了相关结果，联网检索无匹配。\n'
+            '请基于知识库内容进行回答，如信息不完整请如实说明。'
+        )
+    elif web_has_content:
+        source_instruction = (
+            '本次内部知识库无匹配，仅联网检索有结果。\n'
+            '请基于联网内容进行回答，并在回答中注明信息来源于互联网检索。\n'
+            '对于工银亚洲行内专属制度问题，请明确告知用户知识库暂无相关记录，'
+            '建议参考行内最新发文或通知。'
+        )
+    else:
+        source_instruction = (
+            '本次内部知识库和联网检索均无有效匹配。\n'
+            '请坦诚告知用户未检索到相关信息，并提供合理建议。'
+        )
+
+    # 无任何检索结果时的兜底回答模板
+    no_result_template = (
+        '抱歉，目前未能检索到与您问题直接相关的信息。建议您：\n'
+        '1. 尝试换一种方式描述您的问题，或提供更具体的关键词\n'
+        '2. 如涉及行内制度或操作流程，可参考行内最新发文及通知\n'
+        '3. 如涉及市场资讯或外部数据，可尝试通过互联网渠道获取最新信息'
+    )
+
+    rag_prompt = f"""【角色定位】
+你是工银亚洲MAVA智能分析助手的知识问答模块，负责基于检索结果为用户提供准确、专业的回答。
+
+【用户问题】
+{user_query}
+
+【改写后的检索问题】
+{rewritten_query if rewritten_query else user_query}
+
+【信息来源判定】
+{source_instruction}
+
+【内部知识库检索结果】
+{kb_text}
+
+【联网检索结果】
+{web_text}
+
+【当前日期上下文】
+{date_context}
+
+【回答规范】
+
+一、信息使用原则
+1. 所有事实性表述必须有检索结果支撑，严禁凭模型自身记忆编造工银亚洲的具体制度、审批流程、数值标准或内部规定。
+2. 内部知识库的内容优先级高于联网结果。对于行内制度、核算口径、系统操作等问题，仅采信知识库内容。
+3. 对于宏观经济、市场利率、行业通识等问题，可综合联网结果回答，但需注明信息来源及参考时效性。
+4. 若检索结果中包含"低置信度"标记，引用时应注明"以下信息仅供参考，建议进一步确认"。
+
+二、无结果兜底
+若内部知识库和联网检索均无有效结果，请直接输出以下内容（不做修改）：
+{no_result_template}
+
+三、行文风格
+1. 使用专业、简洁的书面中文，语气沉稳客观，避免过度热情或主观评价。
+2. 关键数据、政策名称、日期等信息请适当加粗突出。
+3. 如涉及多步骤操作流程，可使用 1. 2. 3. 有序列表清晰呈列。
+4. 对于定义/概念类问题，先给出简明定义，再展开解释。
+5. 对于制度/政策类问题，尽量引用检索结果中的原文表述，保持准确性。
+6. 统一使用Markdown格式进行排版，确保内容清晰易读。
+
+四、禁止事项
+1. 严禁编造任何检索结果中未出现的数值、流程、政策条款。
+2. 严禁给出投资建议、预测性结论或带有主观偏好的判断。
+3. 严禁将猜测性内容表述为确定性事实。
+4. 若用户问题超出知识问答范畴（如要求查数据或生成报告），应引导用户使用对应功能按钮。
+5. 严禁在回答中包含任何模板标签文本（如<模板B：使用指引>），仅输出自然语言内容。
+
+
+五、免责声明
+回答末尾必须单独一行输出以下文字：
+※ 本回答基于工银亚洲内部知识库及互联网公开信息检索生成，仅供参考，不构成任何业务决策依据。如涉及具体业务操作，请以行内最新制度及正式发文为准。"""
+
+    return {
+        "final_prompt": rag_prompt,
+        "mode": "RAG",
+        "direct_response": "",
+    }
+
+08：业务支持专家 提示词(输入final_prompt 和 query）
+sys_prompt:你是工银亚洲MAVA智能分析助手。
+{{sys_prompt}}
+user_prompt:用户问题如下：
+{{query}}
+
+09:type999_res_output
+import json
+import re
+
+def checkVal(value):
+    return (value is not None and len(value) != 0)
+
+
+def main(args: dict) -> dict:
+    """
+    运行代码节点会调用此函数
+    :param args: 输入固定为args字典类型，kv为输入参数键值对
+    :return: 输出参数为字典类型，kv为输出参数键值对
+    """
+    question_analysis = {}
+    
+
+    variables = [
+        ('type999_res', args.get('type999_res')),
+        ('type2_redirect_res', args.get('type2_redirect_res')),
+        ('type1_redirect_res', args.get('type1_redirect_res'))
+    ]
+
+    question_analysis['type999_res'] = 'Cannot find type999 res'
+    for var_name, var_value in variables:
+        if var_value:  # Checks if the value is not None/empty
+            question_analysis['type999_res'] = var_value
+
+    question_analysis["requestType"] = '999'
+    ret = {
+        "question_analysis": json.dumps(question_analysis)
+    }
+    return ret

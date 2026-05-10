@@ -1,0 +1,29 @@
+节点名称：判断 is_intro
+
+输入字段：
+- is_intro：来自 02_查询改写与路由 v10.py
+- intent：INTRO / GUIDE_DATA / GUIDE_REPORT / KNOWLEDGE
+- status：SHORT_CIRCUIT / PROCEED_TO_SEARCH
+- should_search：新增兼容字段，true/false
+- short_circuit_type：新增兼容字段，INTRO / GUIDE_DATA / GUIDE_REPORT / NONE
+
+分支规则：
+- is_intro = true 或 should_search = false 或 status = SHORT_CIRCUIT：
+  不执行 BKS_justSearch 和 WebSearch_public，直接进入 07_合成生成与引言兜底 v10.py。
+
+- is_intro = false 且 should_search = true 且 status = PROCEED_TO_SEARCH：
+  同时执行 BKS_justSearch 和 WebSearch_public。
+
+推荐传参：
+- BKS_justSearch.query = kb_query
+- WebSearch_public.query = web_query
+- 后续筛选节点需要透传：
+  user_query、rewritten_query、query_type、search_keywords、protected_terms、freshness_required、currentTime、date_context
+
+新增字段建议一并透传至 07：
+- answer_goal
+- time_profile
+- entity_profile
+- classification_confidence
+- rewrite_reason
+- ambiguity_flags

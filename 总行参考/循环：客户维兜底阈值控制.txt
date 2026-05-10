@@ -1,0 +1,105 @@
+import json
+import ast
+import math
+
+def main(args: dict) -> dict:
+    # 获取原始数据和参数
+    result = args.get('result', '')
+    base_threshold = float(args.get('threshold', 0.5))  # 基础阈值
+
+    # 新增：获取top_k参数，支持传入和默认值
+    try:
+        top_k = int(args.get('top_k', 3))  # 默认返回3个结果
+    except (ValueError, TypeError):
+        top_k = 3  # 参数格式错误时使用默认值
+
+    try:
+        # 尝试标准JSON解析
+        results = json.loads(result)
+    except json.JSONDecodeError:
+        try:
+            # 尝试单引号格式解析
+            results = ast.literal_eval(result)
+        except (ValueError, SyntaxError):
+            return {"result": "数据格式错误：无法解析搜索结果"}
+
+    # 空结果处理
+    if not results:
+        return {"result": "未找到相关信息！"}
+
+    # === 动态阈值筛选逻辑 ===
+    # 步骤1：基础过滤（移除低于基础阈值的结果）
+    filtered = [
+        item for item in results
+        if isinstance(item, dict)
+        and "relevance" in item
+        and float(item.get("relevance", 0)) >= base_threshold
+    ]
+
+    # 无基础过滤结果时返回原始最高分Top-K
+    if not filtered:
+        for item in results:
+            item["relevance"] = float(item.get("relevance", 0))
+
+        sorted_results = sorted(
+            results,
+            key=lambda x: x["relevance"],
+            reverse=True
+        )[:min(top_k, len(results))]
+
+        # 截断content字段
+        for item in sorted_results:
+            if "content" in item and isinstance(item["content"], str):
+                item["content"] = item["content"][:6000]
+
+        return {"result": json.dumps(sorted_results, ensure_ascii=False)}
+
+    # 步骤2: 动态阈值计算
+    scores = [float(item.get("relevance", 0)) for item in filtered]
+    sorted_scores = sorted(scores)
+    n = len(sorted_scores)
+
+    # 计算75%分位数
+    p75_index = 0.75 * (n - 1)
+    floor_idx = math.floor(p75_index)
+    ceil_idx = math.ceil(p75_index)
+
+    if floor_idx == ceil_idx:
+        p75 = sorted_scores[floor_idx]
+    else:
+        weight = p75_index - floor_idx
+        p75 = sorted_scores[floor_idx] * (1 - weight) + sorted_scores[ceil_idx] * weight
+
+    # 计算动态阈值
+    max_score = max(scores)
+    dynamic_thresh = max(p75, max_score * 0.8)
+
+    # 步骤3: 动态阈值筛选
+    high_rel = [
+        item for item in filtered
+        if float(item.get("relevance", 0)) >= dynamic_thresh
+    ]
+
+    # 步骤4: 保底机制
+    if not high_rel:
+        filtered_sorted = sorted(
+            filtered,
+            key=lambda x: float(x["relevance"]),
+            reverse=True
+        )
+        # 使用top_k参数控制保底结果数量
+        high_rel = filtered_sorted[:min(top_k, len(filtered_sorted))]
+
+    # 步骤5: 排序并返回Top-K
+    high_rel_sorted = sorted(
+        high_rel,
+        key=lambda x: float(x["relevance"]),
+        reverse=True
+    )[:top_k]  # 使用传入的top_k参数
+
+    # 截断content字段
+    for item in high_rel_sorted:
+        if "content" in item and isinstance(item["content"], str):
+            item["content"] = item["content"][:4000]  # 截断前4000字符
+
+    return {"result": json.dumps(high_rel_sorted, ensure_ascii=False)}

@@ -1,0 +1,1157 @@
+import gzip
+import base64
+import sys
+import json
+
+def gzip_compress(data):
+    """GZIP压缩"""
+    return gzip.compress(data.encode('utf-8'))
+
+def gzip_decompress(compressed_data):
+    """GZIP解压缩"""
+    return gzip.decompress(compressed_data).decode('utf-8')
+
+def base64_encode(data):
+    """Base64编码"""
+    return base64.b64encode(data).decode('ascii')
+
+def base64_decode(encoded_data):
+    """Base64解码"""
+    return base64.b64decode(encoded_data.encode('ascii'))
+
+def process(input_string):
+    """处理数据：GZIP压缩 + Base64编码"""
+    try:
+        # 1. GZIP压缩
+        compressed = gzip_compress(input_string)
+
+        # 2. Base64编码
+        encoded = base64_encode(compressed)
+
+        return encoded
+    except Exception as e:
+        print(f"Error in processing: {e}")
+        return None
+
+def unprocess(encoded_string):
+    """反向处理：Base64解码 + GZIP解压缩"""
+    try:
+        # 1. Base64解码
+        decoded = base64_decode(encoded_string)
+
+        # 2. GZIP解压缩
+        decompressed = gzip_decompress(decoded)
+
+        return decompressed
+    except Exception as e:
+        print(f"Error in unprocessing: {e}")
+        return None
+
+def main(args: dict) -> dict:
+    # 测试数据
+    test_data = "这是一个测试数据，长度超过90000个字符..." * 10  # 模拟长数据
+
+    print(f"原始数据长度: {len(test_data)}")
+
+    # 处理数据
+    processed = process(test_data)
+    print(f"处理后长度: {len(processed) if processed else 0}")
+
+    # 解码验证
+    original = args.get('query')
+    restored = unprocess(original)
+    print(f"还原数据长度: {len(restored) if restored else 0}")
+    print(f"数据一致: {test_data == restored}")
+
+    ret = {
+        "raw_input": restored,
+    }
+
+    return ret
+    
+
+
+
+
+import json
+import datetime
+import calendar
+
+
+PERCENTAGE_NAMES = ['MA_YOY_GROWTH','MA_MOM_GROWTH','MA_L_YE_GROWTH']
+INCREMENT_NAMES = ['MA_MOM_INCREMENT','MA_YOY_INCREMENT','MA_L_YE_INCREMENT']
+
+def isIncrement(suffix_name):
+    return any(increment_name in suffix_name for increment_name in INCREMENT_NAMES)
+
+def isPercentage(suffix_name):
+    return any(percentage_name in suffix_name for percentage_name in PERCENTAGE_NAMES)
+
+# 加千分符，如果为百分比的话，乘以100，并且增加%符号。增幅增比需要有加减号
+def format_amount(suffix_name,balance_str):
+    try:
+        amount_float = float(balance_str)
+        if (isPercentage(suffix_name)):
+            amount_float *= 100
+        
+        formatted_num = f"{amount_float:,.2f}"
+
+        if(amount_float > 0 and (isPercentage(suffix_name) or isIncrement(suffix_name))):
+            formatted_num = f"+{formatted_num}"
+
+        if(isPercentage(suffix_name)):
+            formatted_num = f"{formatted_num}%"
+
+        return formatted_num
+    except ValueError as e:
+        return '输入无效'
+
+#检查是否为月底
+def check_month_end(batchDate):
+    next_day = batchDate + datetime.timedelta(days=1)
+    return next_day.day == 1
+    
+# 获取一个string 两个点之间的内容
+def extract_between_points(text, start_key, end_key):
+    start_marker = f"{start_key}"
+    end_marker = f"{end_key}"
+
+    start_idx = text.find(start_marker)
+    if end_key is None:
+        end_idx = len(text)
+    else:
+        end_idx = text.find(end_marker)
+    print(f"{start_idx} and {end_idx}")
+    if start_idx == -1 or end_idx == -1 or end_idx < start_idx:
+        return ""
+    return text[start_idx:end_idx]
+
+# 将str中的时间替换为真实时间 样例 一、营业净收入-日余额-BD 改为 一、营业净收入-日余额-20251201
+def replace_str_with_actual_date(orig_str,sep_symbol,output_format,date_dict):
+    orig_str_split = orig_str.split(sep=sep_symbol)
+    if(orig_str_split[-1] in date_dict):
+        actual_date = date_dict[orig_str_split[-1]].strftime(output_format)
+        orig_str = f"{''.join(orig_str_split[:-1])}{sep_symbol}{actual_date}"
+    return orig_str
+
+# 讲mapping_dict.key 转换为 mapping_dict.value。并且将实际日期替换为结果
+# e.g MA_BAL-LME 转换为 日余额-20251130
+def create_dict_for_ind(ind_name,mapping_dict,date_dict,input_json_obj):
+    ret_dict = {}
+    for input_suffix,res_suffix in mapping_dict.items():
+        input_suffix = replace_str_with_actual_date(input_suffix,'-','%Y%m%d',date_dict)
+        input_ind_name = f"{ind_name}-{input_suffix}"
+        res_suffix = replace_str_with_actual_date(res_suffix,'_','%Y%m%d',date_dict)
+        print(input_ind_name)
+        if (input_ind_name in input_json_obj):
+            ret_dict[res_suffix] = format_amount(input_suffix,input_json_obj[input_ind_name])
+    return ret_dict
+
+# mapping_dict定义了输出格式和输出key的内容。将输入过滤至mapping_dict定义的内容，并且映射
+def extract_data_from_json(prefix_list,mapping_dict,date_dict,input_json_obj):
+    res_dict = {}
+    for prefix in prefix_list.keys():
+        # 将指标id替换为指标中文名
+        value = prefix_list[prefix]
+        res_dict[value] = create_dict_for_ind(prefix,mapping_dict,date_dict,input_json_obj) 
+    return res_dict
+
+
+revenue_key_prefix_dict = {
+"MA_A1_0":"一、营业净收入",
+"MA_A11_0":"（一）净利息收入",
+"MA_A111_0":"（1）贷款净利息收入",
+"MA_A111_1":"1.房产按揭贷款",
+"MA_A111_2":"2.房产按揭贷款 - 員工",
+"MA_A111_3":"3.个人贷款",
+"MA_A111_4":"4.税务贷款",
+"MA_A111_5":"5.透支",
+"MA_A111_6":"6.定期循环贷款",
+"MA_A111_7":"7.银团贷款",
+"MA_A111_8":"8.贸易融资",
+"MA_A111_9":"9.贸易融资 - CMB分润",
+"MA_A111_10":"10.支票贴现",
+"MA_A111_11":"11.租赁贷款",
+"MA_A111_12":"12.信用卡贷款",
+"MA_A111_13":"13.保理",
+"MA_A111_14":"14.新股认购/保证金贷款",
+"MA_A111_15":"15.其他贷款",
+"MA_A111_16":"16.不良贷款",
+"MA_A112_0":"（2）债券净利息收入",
+"MA_A112_1":"1.AC债券投资",
+"MA_A112_2":"2.FVOCI债券投资",
+"MA_A112_3":"3.FVPL SECURITIES INVESTMENT",
+"MA_A112_4":"4.FVTPL SECURITIES INVESTMENT",
+"MA_A112_5":"5.SECURITIES TRADING",
+"MA_A113_0":"（3）存拆同业净利息收入",
+"MA_A113_1":"1.存放同业",
+"MA_A1132_0":"2.存拆同业",
+"MA_A1132_1":"a.PLACEMENT",
+"MA_A1132_2":"b.REVERSE REPO",
+"MA_A114_0":"（4）客户存款净利息收入",
+"MA_A1141_0":"1.低息存款",
+"MA_A11411_0":"a.活期存款",
+"MA_A11411_1":"i.活期存款 - 非员工",
+"MA_A11411_2":"ii.活期存款 - 员工",
+"MA_A1141_1":"b.储蓄存款",
+"MA_A1142_0":"2.定期存款",
+"MA_A1142_1":"a.定期存款 - 非CMB分润",
+"MA_A1142_2":"b.定期存款 - CMB分润",
+"MA_A115_1":"（5）发行存款证",
+"MA_A116_0":"（6）发行债券净利息收入",
+"MA_A116_1":"1.发行其他债券",
+"MA_A116_2":"2.发行后偿债券",
+"MA_A116_3":"3.发行CLN",
+"MA_A116_4":"4.发行ELN",
+"MA_A117_0":"（7）同业存拆利息支出",
+"MA_A117_1":"1.同业存放",
+"MA_A1172_0":"2.同业存拆 ",
+"MA_A1172_1":"a.BORROWING",
+"MA_A1172_2":"b.REPO",
+"MA_A118_0":"（8）其他利息净收入/支出",
+"MA_A118_1":"1.外汇资金掉期",
+"MA_A1182_0":"2.其他",
+"MA_A1182_1":"a.OTHERS",
+"MA_A1182_2":"b.PROV FOR DEBT - GENERAL",
+"MA_A1182_3":"c.PROV FOR DEBT - INDIVIDUAL ",
+"MA_A118_3":"3.未提贷款承诺成本",
+"MA_A118_4":"4.内部资金轧差",
+"MA_A118_5":"5.资金池分摊 ",
+"MA_A118_6":"6.财务池利息净收入分摊",
+"MA_A12_0":"（二）中间业务净收入",
+"MA_A12_1":"其中：1.收费及佣金收入",
+"MA_A12_2":" 2.收费及佣金支出",
+"MA_A13_0":"（三）财资业务净收入",
+"MA_A13_1":"（1）交易业务净收入",
+"MA_A13_2":"（2）以FVPL入账金融资产及负债之净收益",
+"MA_A14_0":"（四）其他营业净收入",
+"MA_A14_1":"（1）來自金融投资之股息收入",
+"MA_A14_2":"（2）其他营业净收入",
+"MA_A14_3":"（3）财务池非息收入分摊",
+"MA_B1_0":"二、直接营业费用",
+"MA_B11_0":"（一）人力费用",
+"MA_B11_1":"（1）薪金支出",
+"MA_B11_2":"（2）花红支出",
+"MA_B11_4":"（3）其他人员支出",
+"MA_B12_0":"（二）经营性费用",
+"MA_B12_1":"（1）物业费用",
+"MA_B12_2":"（2）IT费用",
+"MA_B12_3":"（3）业务推广费用",
+"MA_B12_4":"（4）招待费用",
+"MA_B12_5":"（5）通讯费用",
+"MA_B12_6":"（6）差旅费用",
+"MA_B12_7":"（7）印刷费用",
+"MA_B12_8":"（8）咨询代理费用",
+"MA_B12_9":"（9）行政费用",
+"MA_B12_10":"（10）运营费用",
+"MA_B13_0":"（三）营业外支出",
+"MA_B13_1":"（1）公益性捐赠",
+"MA_B13_2":"（2）非经营性损失",
+"MA_B13_3":"（3）赔偿支出",
+"MA_B14_1":"（四）营业税金及附加",
+"MA_C1_0":"三、其他特殊事项损益",
+"MA_C1_1":"（一）商誉摊销及其他分摊",
+"MA_C1_2":"（二）固定资产处置收益",
+"MA_C1_3":"（三）FVOCI金融资产处置收益",
+"MA_C1_4":"（四）贷款处置收益",
+"MA_C1_5":"（五）应占联营公司溢利",
+"MA_C1_6":"（六）联营公司处置收益",
+"MA_D1_0":"四、拨备前利润",
+"MA_E1_0":"五、资产减值(损失)/回拨",
+"MA_E1_1":"（一）个别计提",
+"MA_E1_2":"（二）组合计提",
+"MA_E1_3":"（三）回拨",
+"MA_F1_0":"六、拨备后利润 (成本分摊前)",
+"MA_G1_0":"七、成本分摊",
+"MA_G1_1":"（一）中后台成本分摊",
+"MA_G1_2":"（二）财务池成本分摊",
+"MA_H1_0":"八、税前利润",
+"MA_H2_1":"减：所得税及递延税支出",
+"MA_J1_0":"九、税后净利润",
+"MA_K1_0":"影子收入",
+"MA_K1_1":"1.利息影子收入",
+"MA_K1_2":"2.非息影子收入"
+}
+
+asset_key_prefix_dict = {
+"MA_M1_0":"一、资产",
+"MA_M11_0":"（一）贷款",
+"MA_M111_0":"（1）正常贷款",
+"MA_M111_1":"1.房产按揭贷款",
+"MA_M111_2":"2.房产按揭贷款 - 员工",
+"MA_M111_3":"3.个人贷款",
+"MA_M111_4":"4.税务贷款",
+"MA_M111_5":"5.透支",
+"MA_M111_6":"6.定期循环贷款",
+"MA_M111_7":"7.银团贷款",
+"MA_M111_8":"8.贸易融资",
+"MA_M111_9":"9.支票贴现",
+"MA_M111_10":"10.租赁贷款",
+"MA_M111_11":"11.信用卡贷款",
+"MA_M111_12":"12.保理",
+"MA_M111_13":"13.新股认购/保证金贷款",
+"MA_M111_14":"14.其他贷款",
+"MA_M112_1":"（2）不良贷款",
+"MA_M12_0":"（二）债券投资",
+"MA_M12_1":"（1）AC债券投资",
+"MA_M12_2":"（2）FVOCI债券投资",
+"MA_M12_3":"（3）指定FVPL债券投资",
+"MA_M12_4":"（4）FVTPL债券投资",
+"MA_M12_5":"（5）交易性债券投资",
+"MA_M13_0":"（三）拨备余额",
+"MA_M13_1":"（1）组合",
+"MA_M13_2":"（2）个别",
+"MA_M14_0":"（四）存拆同业",
+"MA_M14_1":"（1）存放同业",
+"MA_M14_2":"（2）存拆同业",
+"MA_M14_3":"（3）REVERSE REPO"
+}
+
+liab_key_prefix_dict = {
+"MA_N1_0":"二、负债",
+"MA_N11_0":"（一）客户存款",
+"MA_N111_0":"（1）低息存款",
+"MA_N1111_0":"1.活期存款",
+"MA_N1111_1":"a.活期存款 - 非员工",
+"MA_N1111_2":"b.活期存款 - 员工",
+"MA_N111_2":"2.储蓄存款",
+"MA_N112_1":"（2）定期存款",
+"MA_N12_1":"（二）发行存款证",
+"MA_N13_0":"（三）发行债券",
+"MA_N13_1":"（1）发行其他债券",
+"MA_N13_2":"（2）发行后偿债券",
+"MA_N13_3":"（3）发行CLN",
+"MA_N13_4":"（4）发行ELN",
+"MA_N14_0":"（四）同业存放",
+"MA_N14_1":"（1）同业存放",
+"MA_N14_2":"（2）同业存拆",
+"MA_N14_3":"（3）REPO"
+}
+
+# BD : Batch Date (2025-06-03)
+# ME : Month End (2025-05-31)
+# LYME: Last Year Month End (2024-05-31)
+# LME : Last Month End (2025-04-30)
+# LYYE : Last Year Year End (2024-12-31)
+revenue_bd_mapping_dict = {
+    'MA_MTD_BAL-BD':'MTD_月累计_BD',
+    'MA_YTD_BAL-BD':'YTD_年累计_BD'
+}
+
+revenue_me_mapping_dict = {
+    'MA_MTD_BAL-ME':'MTD_月累计_ME',
+    'MA_YTD_BAL-ME':'YTD_年累计_ME',
+    'MA_L_Y_MTD_BAL-ME':'MTD_月累计_LYME',
+    'MA_L_Y_YTD_BAL-ME':'YTD_年累计_LYME',
+    'MA_L_M_MTD_BAL-ME':'MTD_月累计_LME',
+    'MA_YOY_INCREMENT-ME':'YTD_同比增量_ME',
+    'MA_YOY_GROWTH-ME':'YTD_同比增幅_ME',
+    'MA_MOM_INCREMENT-ME':'MTD_环比增量_ME',
+    'MA_MOM_GROWTH-ME':'MTD_环比增幅_ME'
+}
+
+asset_and_liab_bd_mapping_dict = {
+    'MA_BAL-BD':'BAL_月时点余额_BD',
+    'MA_MTD_BAL-BD':'MTD_月日均余额_BD',
+    'MA_YTD_BAL-BD':'YTD_年日均余额_BD'
+}
+
+asset_and_liab_me_mapping_dict = {
+    'MA_BAL-ME':'BAL_月时点余额_ME',
+    'MA_MTD_BAL-ME':'MTD_月日均余额_ME',
+    'MA_YTD_BAL-ME':'YTD_年日均余额_ME',
+    'MA_L_Y_MTD_BAL-ME':'MTD_月日均余额_LYME',
+    'MA_L_Y_YTD_BAL-ME':'YTD_年日均余额_LYME',
+    'MA_L_M_BAL-ME':'BAL_月时点余额_LME',
+    'MA_L_YE_BAL-ME':'BAL_月时点余额_LYYE',
+    'MA_YOY_INCREMENT-ME':'YTD_同比增量_ME',
+    'MA_YOY_GROWTH-ME':'YTD_同比增幅_ME',
+    'MA_MOM_INCREMENT-ME':'BAL_环比增量_ME',
+    'MA_MOM_GROWTH-ME':'BAL_环比增幅_ME',
+    'MA_L_YE_INCREMENT-ME':'BAL_较上年末增量_ME',
+    'MA_L_YE_GROWTH-ME':'BAL_较上年末增幅_ME'
+}
+
+def main(args: dict) -> dict:
+    input_json_str = args.get('data_dict')
+    input_json_obj = json.loads(input_json_str)
+    batchDate = datetime.datetime.strptime(input_json_obj['batchDate'],'%Y-%m-%d').date()
+    is_month_end = check_month_end(batchDate)
+    monthEnd = batchDate if is_month_end else datetime.datetime.strptime(input_json_obj['lastMonthLastDate'],'%Y-%m-%d').date()
+    date_dict = {
+        "BD":batchDate,
+        "ME":monthEnd,
+        "LYME":datetime.date(monthEnd.year-1,monthEnd.month,monthEnd.day),
+        "LME":datetime.date(monthEnd.year,monthEnd.month,1) - datetime.timedelta(days=1),
+        "LYYE":datetime.date(monthEnd.year-1,12,31)
+    }
+    
+    #如果是月底的，则不需要实时数据
+    revenue_mapping_dict = revenue_me_mapping_dict if is_month_end else {**revenue_bd_mapping_dict,**revenue_me_mapping_dict}
+    asset_and_liab_mapping_dict = asset_and_liab_me_mapping_dict if is_month_end else {**asset_and_liab_bd_mapping_dict,**asset_and_liab_me_mapping_dict}
+
+    revenue_info = extract_data_from_json(revenue_key_prefix_dict,revenue_mapping_dict,date_dict,input_json_obj)
+    asset_info = extract_data_from_json(asset_key_prefix_dict,asset_and_liab_mapping_dict,date_dict,input_json_obj)
+    liab_info = extract_data_from_json(liab_key_prefix_dict,asset_and_liab_mapping_dict,date_dict,input_json_obj)
+    oic_info = extract_between_points(input_json_str,"\"ZONENO",None)
+    oic_info = json.loads("{" + oic_info)
+    oic_json_str = {
+        "业务线":oic_info['LOB_CODE'],
+        "网点号":oic_info['AC_BK_BRNO'],
+        "客户经理ID":oic_info['OIC'],
+        "客户经理名称":oic_info['OIC_NAME']
+    }
+
+    # 返回结果
+    ret = {
+        "asset_dict": asset_info,
+        "liab_dict":liab_info,
+        "Revenue_dict": revenue_info,
+        "OIC_dict":oic_json_str
+    }
+    
+    return ret
+
+
+
+
+def main(args: dict) -> dict:
+    import re
+    
+    volumnPrice_output_raw = args.get('volumnPrice_output_raw', '')
+    revenue_output_raw = args.get('revenue_output_raw', '')
+    
+    
+    def extract_content(raw_str):
+        match = re.search(r'<think>.*?</think>\s*(.*)', raw_str, re.DOTALL)
+        return match.group(1).strip() if match else raw_str
+    
+  
+    volumnPrice_output = extract_content(volumnPrice_output_raw)
+    revenue_output = extract_content(revenue_output_raw)
+    
+    final_analysis= {
+        'volumnPrice_analysis': volumnPrice_output,
+        'revenue_analysis': revenue_output,
+    }
+    ret = {
+        "final_analysis":final_analysis,
+    }
+    return ret
+
+
+import json
+import time
+import datetime
+import calendar
+
+PERCENTAGE_NAMES = ['YOY_GROWTH','MOM_GROWTH','L_YE_GROWTH']
+INCREMENT_NAMES = ['MOM_INCREMENT','YOY_INCREMENT','L_YE_INCREMENT']
+
+def isIncrement(suffix_name):
+    return any(increment_name in suffix_name for increment_name in INCREMENT_NAMES)
+
+def isPercentage(suffix_name):
+    return any(percentage_name in suffix_name for percentage_name in PERCENTAGE_NAMES)
+
+# 加千分符，如果为百分比的话，乘以100，并且增加%符号。增幅增比需要有加减号
+def format_amount(suffix_name,balance_str):
+    try:
+        amount_float = float(balance_str)
+        if (isPercentage(suffix_name)):
+            amount_float *= 100
+        else:
+            amount_float = amount_float/10000
+        
+        formatted_num = f"{amount_float:,.2f}"
+
+        if(amount_float > 0 and (isPercentage(suffix_name) or isIncrement(suffix_name))):
+            formatted_num = f"+{formatted_num}"
+
+        if(isPercentage(suffix_name)):
+            formatted_num = f"{formatted_num}%"
+        return formatted_num
+    except ValueError as e:
+        return '输入无效'
+
+def check_month_end(batchDate):
+    next_day = batchDate + datetime.timedelta(days=1)
+    return next_day.day == 1
+
+# 将str中的时间替换为真实时间 样例 一、营业净收入-日余额-BD 改为 一、营业净收入-日余额-20251201
+def replace_str_with_actual_date(orig_str,sep_symbol,output_format,date_dict):
+    orig_str_split = orig_str.split(sep=sep_symbol)
+    if(orig_str_split[-1] in date_dict):
+        actual_date = date_dict[orig_str_split[-1]].strftime(output_format)
+        orig_str = f"{''.join(orig_str_split[:-1])}{sep_symbol}{actual_date}"
+    return orig_str
+
+#key为输出的key
+#value为匹配源数据的key
+key_suffix_dict = {
+'MA_BAL':'MA_BAL-ME',
+'MA_MTD_BAL':'MA_MTD_BAL-ME',
+'MA_YTD_BAL':'MA_YTD_BAL-ME',
+'MA_L_M_BAL':'MA_L_M_BAL-ME',
+'MA_L_M_MTD_BAL':'MA_L_M_MTD_BAL-ME',
+'MA_L_Y_BAL':'MA_L_Y_BAL-ME',
+'MA_L_Y_MTD_BAL':'MA_L_Y_MTD_BAL-ME',
+'MA_L_Y_YTD_BAL':'MA_L_Y_YTD_BAL-ME',
+'MA_L_YE_BAL':'MA_L_YE_BAL-ME',
+'YOY_INCREMENT':'MA_YOY_INCREMENT-ME',
+'YOY_GROWTH':'MA_YOY_GROWTH-ME',
+'MOM_INCREMENT':'MA_MOM_INCREMENT-ME',
+'MOM_GROWTH':'MA_MOM_GROWTH-ME'
+}
+
+revenue_key_prefix_dict = {
+"MA_A1_0":"一、营业净收入",
+"MA_A11_0":"（一）净利息收入",
+"MA_A111_0":"（1）贷款净利息收入",
+"MA_A111_1":"1.房产按揭贷款",
+"MA_A111_2":"2.房产按揭贷款 - 員工",
+"MA_A111_3":"3.个人贷款",
+"MA_A111_4":"4.税务贷款",
+"MA_A111_5":"5.透支",
+"MA_A111_6":"6.定期循环贷款",
+"MA_A111_7":"7.银团贷款",
+"MA_A111_8":"8.贸易融资",
+"MA_A111_9":"9.贸易融资 - CMB分润",
+"MA_A111_10":"10.支票贴现",
+"MA_A111_11":"11.租赁贷款",
+"MA_A111_12":"12.信用卡贷款",
+"MA_A111_13":"13.保理",
+"MA_A111_14":"14.新股认购/保证金贷款",
+"MA_A111_15":"15.其他贷款",
+"MA_A111_16":"16.不良贷款",
+"MA_A112_0":"（2）债券净利息收入",
+"MA_A112_1":"1.AC债券投资",
+"MA_A112_2":"2.FVOCI债券投资",
+"MA_A112_3":"3.FVPL SECURITIES INVESTMENT",
+"MA_A112_4":"4.FVTPL SECURITIES INVESTMENT",
+"MA_A112_5":"5.SECURITIES TRADING",
+"MA_A113_0":"（3）存拆同业净利息收入",
+"MA_A113_1":"1.存放同业",
+"MA_A1132_0":"2.存拆同业",
+"MA_A1132_1":"a.PLACEMENT",
+"MA_A1132_2":"b.REVERSE REPO",
+"MA_A114_0":"（4）客户存款净利息收入",
+"MA_A1141_0":"1.低息存款",
+"MA_A11411_0":"a.活期存款",
+"MA_A11411_1":"i.活期存款 - 非员工",
+"MA_A11411_2":"ii.活期存款 - 员工",
+"MA_A1141_1":"b.储蓄存款",
+"MA_A1142_0":"2.定期存款",
+"MA_A1142_1":"a.定期存款 - 非CMB分润",
+"MA_A1142_2":"b.定期存款 - CMB分润",
+"MA_A115_1":"（5）发行存款证",
+"MA_A116_0":"（6）发行债券净利息收入",
+"MA_A116_1":"1.发行其他债券",
+"MA_A116_2":"2.发行后偿债券",
+"MA_A116_3":"3.发行CLN",
+"MA_A116_4":"4.发行ELN",
+"MA_A117_0":"（7）同业存拆利息支出",
+"MA_A117_1":"1.同业存放",
+"MA_A1172_0":"2.同业存拆 ",
+"MA_A1172_1":"a.BORROWING",
+"MA_A1172_2":"b.REPO",
+"MA_A118_0":"（8）其他利息净收入/支出",
+"MA_A118_1":"1.外汇资金掉期",
+"MA_A1182_0":"2.其他",
+"MA_A1182_1":"a.OTHERS",
+"MA_A1182_2":"b.PROV FOR DEBT - GENERAL",
+"MA_A1182_3":"c.PROV FOR DEBT - INDIVIDUAL ",
+"MA_A118_3":"3.未提贷款承诺成本",
+"MA_A118_4":"4.内部资金轧差",
+"MA_A118_5":"5.资金池分摊 ",
+"MA_A118_6":"6.财务池利息净收入分摊",
+"MA_A12_0":"（二）中间业务净收入",
+"MA_A12_1":"其中：1.收费及佣金收入",
+"MA_A12_2":" 2.收费及佣金支出",
+"MA_A13_0":"（三）财资业务净收入",
+"MA_A13_1":"（1）交易业务净收入",
+"MA_A13_2":"（2）以FVPL入账金融资产及负债之净收益",
+"MA_A14_0":"（四）其他营业净收入",
+"MA_A14_1":"（1）來自金融投资之股息收入",
+"MA_A14_2":"（2）其他营业净收入",
+"MA_A14_3":"（3）财务池非息收入分摊",
+"MA_B1_0":"二、直接营业费用",
+"MA_B11_0":"（一）人力费用",
+"MA_B11_1":"（1）薪金支出",
+"MA_B11_2":"（2）花红支出",
+"MA_B11_4":"（3）其他人员支出",
+"MA_B12_0":"（二）经营性费用",
+"MA_B12_1":"（1）物业费用",
+"MA_B12_2":"（2）IT费用",
+"MA_B12_3":"（3）业务推广费用",
+"MA_B12_4":"（4）招待费用",
+"MA_B12_5":"（5）通讯费用",
+"MA_B12_6":"（6）差旅费用",
+"MA_B12_7":"（7）印刷费用",
+"MA_B12_8":"（8）咨询代理费用",
+"MA_B12_9":"（9）行政费用",
+"MA_B12_10":"（10）运营费用",
+"MA_B13_0":"（三）营业外支出",
+"MA_B13_1":"（1）公益性捐赠",
+"MA_B13_2":"（2）非经营性损失",
+"MA_B13_3":"（3）赔偿支出",
+"MA_B14_1":"（四）营业税金及附加",
+"MA_C1_0":"三、其他特殊事项损益",
+"MA_C1_1":"（一）商誉摊销及其他分摊",
+"MA_C1_2":"（二）固定资产处置收益",
+"MA_C1_3":"（三）FVOCI金融资产处置收益",
+"MA_C1_4":"（四）贷款处置收益",
+"MA_C1_5":"（五）应占联营公司溢利",
+"MA_C1_6":"（六）联营公司处置收益",
+"MA_D1_0":"四、拨备前利润",
+"MA_E1_0":"五、资产减值(损失)/回拨",
+"MA_E1_1":"（一）个别计提",
+"MA_E1_2":"（二）组合计提",
+"MA_E1_3":"（三）回拨",
+"MA_F1_0":"六、拨备后利润 (成本分摊前)",
+"MA_G1_0":"七、成本分摊",
+"MA_G1_1":"（一）中后台成本分摊",
+"MA_G1_2":"（二）财务池成本分摊",
+"MA_H1_0":"八、税前利润",
+"MA_H2_1":"减：所得税及递延税支出",
+"MA_J1_0":"九、税后净利润",
+"MA_K1_0":"影子收入",
+"MA_K1_1":"1.利息影子收入",
+"MA_K1_2":"2.非息影子收入"
+}
+
+asset_liab_key_prefix_dict = {
+"MA_M1_0":"一、资产",
+"MA_M11_0":"（一）贷款",
+"MA_M111_0":"（1）正常贷款",
+"MA_M111_1":"1.房产按揭贷款",
+"MA_M111_2":"2.房产按揭贷款 - 员工",
+"MA_M111_3":"3.个人贷款",
+"MA_M111_4":"4.税务贷款",
+"MA_M111_5":"5.透支",
+"MA_M111_6":"6.定期循环贷款",
+"MA_M111_7":"7.银团贷款",
+"MA_M111_8":"8.贸易融资",
+"MA_M111_9":"9.支票贴现",
+"MA_M111_10":"10.租赁贷款",
+"MA_M111_11":"11.信用卡贷款",
+"MA_M111_12":"12.保理",
+"MA_M111_13":"13.新股认购/保证金贷款",
+"MA_M111_14":"14.其他贷款",
+"MA_M112_1":"（2）不良贷款",
+"MA_M12_0":"（二）债券投资",
+"MA_M12_1":"（1）AC债券投资",
+"MA_M12_2":"（2）FVOCI债券投资",
+"MA_M12_3":"（3）指定FVPL债券投资",
+"MA_M12_4":"（4）FVTPL债券投资",
+"MA_M12_5":"（5）交易性债券投资",
+"MA_M13_0":"（三）拨备余额",
+"MA_M13_1":"（1）组合",
+"MA_M13_2":"（2）个别",
+"MA_M14_0":"（四）存拆同业",
+"MA_M14_1":"（1）存放同业",
+"MA_M14_2":"（2）存拆同业",
+"MA_M14_3":"（3）REVERSE REPO",
+"MA_N1_0":"二、负债",
+"MA_N11_0":"（一）客户存款",
+"MA_N111_0":"（1）低息存款",
+"MA_N1111_0":"1.活期存款",
+"MA_N1111_1":"a.活期存款 - 非员工",
+"MA_N1111_2":"b.活期存款 - 员工",
+"MA_N111_2":"2.储蓄存款",
+"MA_N112_1":"（2）定期存款",
+"MA_N12_1":"（二）发行存款证",
+"MA_N13_0":"（三）发行债券",
+"MA_N13_1":"（1）发行其他债券",
+"MA_N13_2":"（2）发行后偿债券",
+"MA_N13_3":"（3）发行CLN",
+"MA_N13_4":"（4）发行ELN",
+"MA_N14_0":"（四）同业存放",
+"MA_N14_1":"（1）同业存放",
+"MA_N14_2":"（2）同业存拆",
+"MA_N14_3":"（3）REPO"
+}
+
+def create_json_for_indicator(ind_name, output_ind_name, input_json, date_dict, type, type_name, index=None):
+    ind_dict = {"IND_NAME":output_ind_name}
+    ind_dict["TYPE"] = type
+    ind_dict["TYPE_NAME"] = type_name
+
+    # 在32的倍数标识一下
+    if index is None:
+        ind_dict["INDICATOR_FLAG"] = "0"
+    # elif index == 32:
+    #    ind_dict["INDICATOR_FLAG"] = "1"
+    elif index != 0 and index % 32 == 0:
+        ind_dict["INDICATOR_FLAG"] = "1"
+    else:
+        ind_dict["INDICATOR_FLAG"] = "0"
+
+    for output_key in key_suffix_dict.keys():
+        original_key = key_suffix_dict[output_key]
+        res_suffix = replace_str_with_actual_date(original_key,'-','%Y%m%d',date_dict)
+        ind_dict[output_key] = format_amount(output_key,input_json[f"{ind_name}-{res_suffix}"])
+    return ind_dict
+    
+def main(args: dict) -> dict:
+    """
+    运行代码节点会调用此函数
+    :param args: 输入固定为args字典类型，kv为输入参数键值对
+    :return: 输出参数为字典类型，kv为输出参数键值对
+    """
+    input_str_json = json.loads(args.get('raw_input'))
+    batchDate = datetime.datetime.strptime(input_str_json['batchDate'],'%Y-%m-%d').date()
+    is_month_end = check_month_end(batchDate)
+    monthEnd = batchDate if is_month_end else datetime.datetime.strptime(input_str_json['lastMonthLastDate'],'%Y-%m-%d').date()
+    date_dict = {
+        "BD":batchDate,
+        "ME":monthEnd,
+        "LYME":datetime.date(monthEnd.year-1,monthEnd.month,monthEnd.day),
+        "LME":datetime.date(monthEnd.year,monthEnd.month,1) - datetime.timedelta(days=1),
+        "LYYE":datetime.date(monthEnd.year-1,12,31)
+    }
+    
+    year = batchDate.year
+    month = batchDate.month
+
+    # 合并两个列表为 IND_INFO
+    ind_info_list = []
+    
+    # 处理收入类指标
+    revenue_items = []
+    for i, ind_name in enumerate(revenue_key_prefix_dict):
+        revenue_items.append(create_json_for_indicator(ind_name, revenue_key_prefix_dict[ind_name], input_str_json, date_dict, 'revenue', '收入指标', i))
+    
+    # 处理资产负债类指标
+    asset_liab_items = []
+    for i, ind_name in enumerate(asset_liab_key_prefix_dict):
+        asset_liab_items.append(create_json_for_indicator(ind_name, asset_liab_key_prefix_dict[ind_name],input_str_json, date_dict, 'asset_liab', '资产负债', len(revenue_key_prefix_dict) + i))
+
+    # 添加rowspan信息
+    page_size = 32
+    revenue_length = len(revenue_items)
+    asset_liab_length = len(asset_liab_items)
+    total_rows = revenue_length + asset_liab_length
+
+    for i, item in enumerate(revenue_items):
+        # 计算在页面中的位置
+        page_position = i % page_size
+        
+        if page_position == 0:
+            # 页面起始行
+            # 计算从当前位置开始还能有多少行
+            remaining_rows = revenue_length - i
+            rowspan = min(page_size, remaining_rows)
+            item['ROWSPAN'] = str(rowspan)
+        else:
+            # 非页面起始行
+            item['ROWSPAN'] = '0'
+
+    for i, item in enumerate(asset_liab_items):
+        current_index = i + revenue_length
+        # 计算在页面中的位置
+        page_position = current_index % page_size
+        
+        if i == 0 and page_position != 0:
+            # 计算从当前位置开始还能有多少行
+            remaining_rows = total_rows - current_index
+            rowspan = min(page_size - page_position, remaining_rows)
+            item['ROWSPAN'] = str(rowspan)
+        elif i != 0 and page_position == 0:
+            # 计算从当前位置开始还能有多少行
+            remaining_rows = total_rows - current_index
+            rowspan = min(page_size, remaining_rows)
+            item['ROWSPAN'] = str(rowspan)
+        else:
+            # 非页面起始行
+            item['ROWSPAN'] = '0'
+        
+    # 合并两个类型的数据
+    ind_info_list = revenue_items + asset_liab_items
+
+    # 计算上个月份
+    last_month = month - 1 if month > 1 else 12
+
+    oic_json_str = {
+        "reportTitle":"客户经理经营诊断报告",
+        "period": f"{year}年{month}月",
+        "CURRENT_MONTH": month,
+        "LAST_MONTH": last_month,
+        "LOB_CODE":input_str_json['LOB_CODE'],
+        "AC_BK_BRNO":input_str_json['AC_BK_BRNO'],
+        "OIC":input_str_json['OIC'],
+        "OIC_NAME":input_str_json['OIC_NAME'],
+        "FINANCIAL_HIGHLIGHTS":args.get('financial_highlights'),
+        "KEY_FACTS":args.get('key_facts'),
+        "IND_INFO": ind_info_list
+    }
+    oic_final_json = json.dumps(oic_json_str, ensure_ascii = False, indent = 4, sort_keys=False)
+    ret = {
+        "oic_final_json": oic_final_json
+    }
+    return ret
+
+
+import gzip
+import base64
+import sys
+import json
+
+def gzip_compress(data):
+    """GZIP压缩"""
+    return gzip.compress(data.encode('utf-8'))
+
+def gzip_decompress(compressed_data):
+    """GZIP解压缩"""
+    return gzip.decompress(compressed_data).decode('utf-8')
+
+def base64_encode(data):
+    """Base64编码"""
+    return base64.b64encode(data).decode('ascii')
+
+def base64_decode(encoded_data):
+    """Base64解码"""
+    return base64.b64decode(encoded_data.encode('ascii'))
+
+def process(input_string):
+    """处理数据：GZIP压缩 + Base64编码"""
+    try:
+        # 1. GZIP压缩
+        compressed = gzip_compress(input_string)
+
+        # 2. Base64编码
+        encoded = base64_encode(compressed)
+
+        return encoded
+    except Exception as e:
+        print(f"Error in processing: {e}")
+        return None
+
+def unprocess(encoded_string):
+    """反向处理：Base64解码 + GZIP解压缩"""
+    try:
+        # 1. Base64解码
+        decoded = base64_decode(encoded_string)
+
+        # 2. GZIP解压缩
+        decompressed = gzip_decompress(decoded)
+
+        return decompressed
+    except Exception as e:
+        print(f"Error in unprocessing: {e}")
+        return None
+
+def main(args: dict) -> dict:
+    # 处理数据
+    processed = process(args.get('oic_final_json'))
+    ret = {
+        "encrypted_res": processed,
+    }
+
+    return ret
+    
+
+
+经营分析智能助理
+
+您好！我是您的经营分析AI助手
+覆盖业财全链路综合分析，助力您快速识别并追踪问题、优化决策！提升经营效率，让我们携手共创高效经营！
+效益：收入成本、产品贡献等
+规模：资产负债、量价分析等
+
+
+架构设计：
+
+
+角色定义：
+1.Planner Agent: 工作流起点，核心职责是将用户输入的、模糊的自然语言查询，转化为一个精确、无歧义的结构化任务指令，是规划阶段的核心。例如，用户输入“我想知道去年全年的经营业绩情况”，Planner Agent会输出一个JSON对象。
+
+{
+  “Indicator_Name”:[“营业净收入”，”利息净收入”，“中间业务净收入”，“财资业务净收入”],
+  “Batch_Date”:”2025-12-31”, (可多选？)
+  “Request_type”:”0”, （模糊的话，调用提问器？）
+}
+
+-P.S. 内置指标关系映射表，回答什么指标算是经营业绩，细项是什么？
+
+2.Researcher Agent：信息检索与验证的核心，执行“检索-分析-精炼”循环：
+-检索（Retrieve）:接收到规划智能体的结构化指令后，研究智能体首先构建初始检索式，通过接口，找到相关数据集，并以JSON对象返回（不作计算、只粘数）。
+-分析（Analyze）:研究智能体会将检索数据按照“量-价-质”进行分类，并结合用户问题进行针对性回答（简单分析）。
+-精炼（Refine）:在反思阶段，研究智能体会调用LLM对检索数据、分析进行相关性评估和打分（例如，从1到10分），以判断其与任务指令所要求数据是否契合，同时自主生成一个更精准的检索式，随后Agent将基于新的检索式重新进入循环，开始新一轮迭代。
+
+3.Answerer Agent：是工作流的终点，负责将Researcher 筛选出的“金块”转化为最终交付物（分析文本+表格数据）。
+
+
+
+
+
+
+
+情景1：生成报告
+用户输入：我希望生成2025年12月31日分析报告
+信息确认框（默认用户EE，除非用户具备访问其他OIC权限）：
+
+助手输出：
+
+
+情景2：问数据
+用户输入：这几个月的利息净收入趋势？
+问题理解：多少月算“几个月”，如无指定天数则默认月末，如无指定月份则默认返回3个月数据。
+
+参考：
+<task>从{{query}}中提取筛选条件、展现标签、按条件筛选客群或查询指标</task>
+
+<context>
+请分析用户的{{query}}，该{{query}}旨在从大宽表中筛选客户清单或进行指标查询，此宽表是2张大宽表，其中一张为客户经理管户情况表主键是客户经理编号、币种、地区号、网点号，另外一张宽表为客户维度经营业绩宽表主键是客户编号、币种、地区号、网点号，其他字段包含客户的存款、贷款、中收、金融资产、产品持有标识、客户标签。请从{{query}}中提取完整的筛选条件、展现用的标签关键字。
+
+特殊要求：
+  1.请你识别用户在描述筛选条件时是否包含机构或地区信息，如果包含机构或地区信息（例如：“xx分行xx支行”），则需要将这些信息同时提取为筛选条件和展示关键字。
+  2.当{{query}}中包含“我管户”、“我分管”等相关信息时，筛选条件中一定要增加判断客户经理编号为{{telleId}}
+  3.当{{query}}包含客户经理名字，比如张三管户/分管的客户中对公存款余额前三的客户清单，这时{{query}}中包含客户经理名称“张三”，需增加判断客户经理名称为“张三”，但是不需要判断客户经理编号为{{telleId}}。
+ 4.当{{query}}中包含具体的时间信息，或者上月末，上年末等模糊时间信息，提取时间字段，且筛选条件中一定要增加判断数据日期为提取出的时间条件，如果{{query}}中不包含时间字段，则默认筛选批量日期为昨天的数据。
+  5.当{{query}}中包含“我辖内”等相关信息，或者根据筛选条件中一定要增加判断机构名称为：{{institutionName}}，且将{{institutionName}}作为展示关键字之一。
+  6.当{{query}}中既不包含“管户”、“辖内”等关键字，也未指定具体的机构信息，旨在根据某个指标进行灵活客群筛选，例如“对公存款余额50万以上的客户清单”，此时需要根据{{control}}参数值来判断是查询客户经理管户情况还是查询本机构及辖内数据，具体判断逻辑为当{{control}}仅包含“有管户权限”时，增加判断客户经理编号为{{telleId}}，当{{control}}包含“本机构及辖内权限”时，增加判断机构名称为{{institutionName}}。
+
+注意：
+如果用户提问的是按某个标签筛选后的客户清单，在展示关键字中增加展示客户名称及客户编号
+
+筛选条件键为"filter_str"，值为一个json数组，其中每个json对象为一组筛选条件，其中每个筛选条件应包含以下字段：
+
+* **标签搜索关键字**：用户在描述该筛选条件时使用的关键词或短语，用于识别宽表中的客户标签字段。
+* **标签筛选条件**：应用于该标签字段的筛选条件。
+* **标签筛选值**：用于筛选的具体数值或文本。
+* **relation**：该筛选条件与前一个标签筛选条件之间的逻辑关系。
+
+展现关键字键为"show_words"，值为一个json数组，其中每个json对象为一组展现关键字，每个展现关键字包含一个字段：
+* **展现标签搜索关键字:** 用户在描述该展现条件时使用的关键词或短语，用于识别宽表中的客户标签字段。
+
+# 返回格式:
+严格按照如下json格式返回:
+{
+  "filter_str": [
+    {
+      "标签搜索关键字": "...",
+      "标签筛选条件": "...",
+      "标签筛选值": "...",
+      "relation": null
+    },
+    {
+      "标签搜索关键字": "...",
+      "标签筛选条件": "...",
+      "标签筛选值": "...",
+      "relation": "..."
+    }
+  ],
+  "show_words": [
+    {
+      "展现标签搜索关键字": "..."
+    },
+{
+      "展现标签搜索关键字": "..."
+    }
+  ],
+"nl2sql"：批量日期默默认为昨天，筛选条件为filter_str，展示关键字为show_words
+}
+
+# 用户问题：
+${question}$
+</context>
+<instructions>
+1. 提取筛选条件：
+   - 标签搜索关键字:
+     无需做同义词联想扩展，关键字之间以空格分隔.
+   - 标签筛选条件:
+     - 如果你认为当前的标签更倾向于字典类型的标签，那么"标签筛选条件"必须是包含或不包含；
+     - 如果你认为当前的标签更倾向于数字，金额，日期类型标签，那么"标签筛选条件"必须在【大于，大于等于，小于，小于等于，等于，在...之间】选择。
+     -XXX余额较年初增长前5的客户清单，需要先判断“XXX余额较年初”>0且按“XXX余额较年初”降序排序取前5；XXX余额较年初减少前5的客户清单，需要先判断“XXX余额较年初”<0且按“XXX余额较年初”升序排列取前5的客户清单。
+   - 标签筛选值:
+ - 如果是数字、金额类型的标签，请自动转换为数字，大宽表中的金额单位都是元；
+ - 如果是字典型字段，标签筛选值先不用做字典值转换，尽量用中文来猜测字典值；
+ - 如果是日期类型标签，标签筛选值请格式化为YYYYMMDD格式，因为后台表中存储的都是8位日期。
+   - relation:
+     可选的条件是 and/or，务必保证逻辑关系准确
+- 识别"并且/同时"转换为and
+    - 识别"或者/任一"转换为or
+    - 第一个条件relation设为null
+
+3. 确定展现标签：
+   - 无需做同义词联想扩展，关键字间以空格分隔。
+   - 如果用户的语义可以理解为想要看符合条件的记录数，那数组中就返回一组json,不要多返回，这一组json中的提取展现标签搜索关键字为COUNT，此时务必不要包含筛选的标签。
+     - 如果用户没有特别指定需要展现的标签或者暗示想看的标签，那就默认将用于筛选的1个或多个标签返回。
+     - 如果用户的问题中已经明确或者暗示了需要展现的标签，那就从用户的问题中提取需要展现的标签，务必不要包含用于筛选的标签。
+
+5. 生成JSON结构：
+   - 保持字段顺序：filter_str > show_words >
+   - 确保数值类型正确转换
+   - 日期格式严格遵循8位数字
+</instructions>
+<example>
+例1：
+用户问题: 我管户下对公存款余额TOP5的客户清单
+分析:问题中包含“我管户”的关键字，因此筛选条件增加筛选客户经理编号为{{telleId}}，假如x等于{{telleId}}
+返回1：{
+    "filter_str": [
+        {
+            "标签搜索关键字": "对公存款余额",
+            "标签筛选条件": "降序排序",
+            "标签筛选值": "5",
+            "relation": null
+        },
+{
+"标签筛选条件": "等于",
+"标签筛选值": "x"
+"标签搜索关键字": "客户经理编号",
+"relation": "and"
+}
+    ],
+    "show_words": [
+        {
+            "展现标签搜索关键字": "对公存款余额", "客户名称", "客户编号"    
+}
+],
+"nl2sql":批量日期默认为昨天，筛选条件为按对公存款余额降序排序筛选前5且客户经理编号为x，展示关键字为对公存款余额，客户名称，客户编号
+}
+
+例2:
+张三管户下公司存款余额较年初增长最多的5个客户：
+返回2：
+{
+"filter_str": [
+{
+"标签筛选条件": "大于",
+"标签筛选值": "0",
+"标签搜索关键字": "公司存款余额较年初",
+"relation": null
+},
+{
+"标签筛选条件": "降序排序",
+"标签筛选值": "5",
+"标签搜索关键字": "公司存款余额较年初",
+"relation": "and"
+},
+{
+"标签筛选条件": "等于",
+"标签筛选值": "张三",
+"标签搜索关键字": "客户经理名称",
+"relation": "and"
+}
+],
+"show_words": [
+{
+            "展现标签搜索关键字": "公司存款余额较年初额", "客户名称", "客户编号"     
+}],
+"nl2sql":批量日期默认为昨天，筛选筛选条件为公司存款余额较年初大于0且按公司存款余额较年初降序排列取前5且客户经理名称等于张三，展示关键字为公司存款余额较年初额，客户名称，客户编号
+}
+
+例3:
+广东珠海分行日均金融资产余额50万以上的客户清单：
+返回3：
+{
+"filter_str": [
+{
+"标签筛选条件": "大于",
+"标签筛选值": "500000",
+"标签搜索关键字": "日均金融资产余额",
+"relation": null
+},
+{
+"标签筛选条件": "等于",
+"标签筛选值": "广东珠海分行",
+"标签搜索关键字": "机构名称",
+"relation": "and"
+}
+],
+"show_words": [
+{
+            "展现标签搜索关键字": "日均金融资产余额", "机构名称"，"客户名称", "客户编号"     
+}],
+"nl2sql":批量日期默认为昨天，筛选筛选条件为日均金融资产余额大于500000且机构名称等于广东珠海分行，展示关键字为日均金融资产余额，机构名称，客户名称，客户编号
+}
+
+例4:
+我辖内已签约代发工资的客户清单：
+分析:问题中包含“我辖内”的关键字，因此筛选条件增加筛选当前用户所属机构名称，假如y等于{{institutionName}}
+返回4：
+{
+"filter_str": [
+{
+"标签筛选条件": "等于",
+"标签筛选值": "是",
+"标签搜索关键字": "代发工资签约标志",
+"relation": null
+},
+{
+"标签筛选条件": "等于",
+"标签筛选值": "y",
+"标签搜索关键字": "机构名称",
+"relation": "and"
+}
+],
+"show_words": [
+{
+            "展现标签搜索关键字": "代发工资签约标志", "机构名称"，"客户名称", "客户编号"     
+}],
+"nl2sql":批量日期默认为昨天，筛选筛选条件为代发工资签约标志等于是且机构名称等于y，展示关键字为代发工资签约标志，机构名称，客户名称，客户编号
+}
+
+例5:
+日均金融资产余额50万以上的客户清单
+分析:问题中既不包含“我辖内”相关的关键字，也不包含“我管户”相关关键字，因此根据{{control}}进行判断，如果{{control}}包含本机构及辖内权限，则筛选条件增加筛选当前用户所属机构名称，假如y等于{{institutionName}}
+返回4：
+{
+"filter_str": [
+{
+"标签筛选条件": 大于",
+"标签筛选值": "500000",
+"标签搜索关键字": "日均金融资产余额",
+"relation": null
+},
+{
+"标签筛选条件": "等于",
+"标签筛选值": "y",
+"标签搜索关键字": "机构名称",
+"relation": "and"
+}
+],
+"show_words": [
+{
+            "展现标签搜索关键字": "代发工资签约标志", "机构名称"，"客户名称", "客户编号"     
+}],
+"nl2sql":批量日期默认为昨天，筛选筛选条件为日均金融资产余额大于500000且机构名称等于y，展示关键字为日均金融资产余额，机构名称，客户名称，客户编号
+}
+
+例6：
+用户问题: 对公存款余额TOP5的客户清单
+分析:问题中既不包含“我辖内”相关的关键字，也不包含“我管户”相关关键字，因此根据{{control}}进行判断，如果{{control}}j仅只有“管户权限”，则筛选条件一定要增加筛选“客户经理编号”为{{telleId}}，假如x等于{{telleId}}
+返回6：{
+    "filter_str": [
+        {
+            "标签搜索关键字": "对公存款余额",
+            "标签筛选条件": "降序排序",
+            "标签筛选值": "5",
+            "relation": null
+        },
+{
+"标签筛选条件": "等于",
+"标签筛选值": "x"
+"标签搜索关键字": "客户经理编号",
+"relation": "and"
+}
+    ],
+    "show_words": [
+        {
+            "展现标签搜索关键字": "对公存款余额", "客户名称", "客户编号"    
+}
+],
+"nl2sql":批量日期默认为昨天，筛选条件为按对公存款余额降序排序筛选前5且客户经理编号为x，展示关键字为对公存款余额，客户名称，客户编号
+}
+</example>
+
+<output_format>
+严格使用以下JSON格式，包含三个主字段：
+1. filter_str数组：每个对象必须包含标签搜索关键字、标签筛选条件、标签筛选值、relation字段
+2. show_words数组：每个对象仅包含展现标签搜索关键字字段
+3. 所有数值必须去除千分位，日期必须格式化为YYYYMMDD，逻辑关系必须大写（and/or），最终输出必须从```json开始
+4.除json外不要返回任何其他思考或分析内容，即你的返回应该从```json开始。
+5.当{{query}}中不包含“我辖内”相关信息，也不包含“我管户”相关信息，也没有机构相关信息，则需要根据{{control}}进行判断，如果{control}}参数值中包含“本机构及辖内权限”，则默认{{query}}提问的是“我辖内”的场景，筛选条件中一定要增加判断机构名称为：{{institutionName}}；如果{{control}}参数值只有“管户权限”，则默认{{query}}提问的是“我管户”的场景，筛选条件中一定要增加判断客户经理编号为{{telleId}}。其中“我管户”的场景指的是查询客户经理管户情况，“我辖内的”的场景指的是查询当前用户所在机构的相关情况。
+</output_format>

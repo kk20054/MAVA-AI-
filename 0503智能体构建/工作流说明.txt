@@ -1,0 +1,33 @@
+[用户输入 query]
+        │
+        ▼
+[LLM: 意图守卫]  ← 提示词§二
+        │
+        ▼
+[代码: 路由脚本]  ← 脚本§三  (输入: guard_output + query)
+        │
+        ├── is_redirect = true
+        │       │
+        │       ▼
+        │   直接输出 redirect_message 给用户 ← (LLM生成的智能引导)
+        │   (跳过后续所有步骤)
+        │
+        └── is_redirect = false
+                │
+                ▼
+        [LLM: 参数提取 / 问数规划专家]  ← 原有提示词 (不变)
+                │
+                ▼
+        [代码: process_intent2_output v8.1]  ← 接收 is_redirect=false 直接透传
+                │
+                ▼
+        [API 调用]
+                │
+                ▼
+        [代码: data_slicing v8.1]
+                │
+                ▼
+        [LLM: 问数回答专家 v8.1]
+                │
+                ▼
+        输出最终回复 + 推荐问题

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAVA OIC 经营看板交互 Demo</title>
+  <style>
+    :root {
+      --red:#c9141e; --red-2:#8f1017; --red-soft:#fff3f4;
+      --teal:#087f8c; --teal-soft:#edfafa; --green:#087443;
+      --ink:#162033; --muted:#64748b; --line:#d9e0ea; --soft:#f6f8fb;
+      --panel:#ffffff; --warn:#b45309;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--soft);font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;color:var(--ink)}
+    button,input{font-family:inherit}
+    .app{min-width:1360px;height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#fff 0,#f7f9fc 76px,#f6f8fb 100%)}
+    .topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 22px;background:rgba(255,255,255,.96)}
+    .brand{display:flex;align-items:center;gap:12px;width:230px;font-size:25px;font-weight:900;letter-spacing:.2px}
+    .logo{width:34px;height:34px;border:3px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:18px;font-weight:900}
+    .title{border-left:1px solid var(--line);padding-left:18px;font-size:18px;font-weight:800}
+    .top-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
+    .pill{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 14px;display:flex;align-items:center;gap:8px;font-size:13px;color:#334155}
+    .avatar{width:36px;height:36px;border-radius:50%;background:#eef2f7;display:grid;place-items:center;font-weight:800}
+    .shell{flex:1;display:grid;grid-template-columns:64px minmax(820px,1fr) 500px;min-height:0}
+    .rail{background:#fff;border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:12px}
+    .nav{height:42px;border-radius:10px;display:grid;place-items:center;color:#64748b;font-size:18px}
+    .nav.active{background:var(--red-soft);color:var(--red);border-left:3px solid var(--red)}
+    .main{padding:18px;overflow:auto}
+    .head{display:flex;align-items:end;justify-content:space-between;margin-bottom:12px}
+    .head h1{margin:0;font-size:22px}
+    .head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .status{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+    .kpi{border:1px solid var(--line);border-radius:8px;background:#fff;min-height:152px;padding:14px;cursor:pointer;transition:.16s ease;position:relative;overflow:hidden}
+    .kpi:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.06)}
+    .kpi.active{border:2px solid var(--red);background:linear-gradient(180deg,#fff5f5 0,#fff 72%);box-shadow:0 8px 24px rgba(201,20,30,.09)}
+    .kpi.active:after{content:"当前分析";position:absolute;right:12px;top:12px;color:var(--red);font-size:12px;font-weight:800}
+    .kpi h3{margin:0;font-size:16px}
+    .value{font-size:33px;font-weight:900;margin:18px 0 8px}
+    .value span{font-size:14px;color:#475569;margin-left:6px}
+    .delta{display:grid;grid-template-columns:58px 1fr 70px;gap:8px;font-size:12px;line-height:1.85}
+    .pos{color:var(--green);font-weight:800}.neg{color:var(--red);font-weight:800}
+    .grid2{display:grid;grid-template-columns:1fr 1fr 1.22fr;gap:12px;margin-bottom:12px}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;min-height:292px}
+    .panel-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px}
+    .panel h2{margin:0;font-size:16px}
+    .sub{color:var(--muted);font-size:12px;margin-top:4px}
+    svg{width:100%;height:210px;display:block}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th{background:#f2f5f9;color:#475569;text-align:left;padding:8px;border-bottom:1px solid var(--line);font-weight:800}
+    td{padding:7px 8px;border-bottom:1px solid #edf1f6}
+    tr.clickable{cursor:pointer}
+    tr.clickable:hover td{background:#fff8f8}
+    tr.selected td{background:var(--red-soft)!important}
+    .barcell{position:relative;min-width:70px}.bar{position:absolute;left:7px;top:10px;height:12px;border-radius:3px;background:var(--teal);opacity:.18}.bar.negbar{background:var(--red)}
+    .bartext{position:relative;font-weight:800}
+    .bottom{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:18px}
+    .chat{border-left:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-width:0}
+    .chat-head{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-weight:900;font-size:17px}
+    .chat-body{padding:16px;overflow:auto}
+    .context{border:1px solid #f0b9be;background:#fffafa;border-radius:8px;padding:13px;margin-bottom:14px;position:relative}
+    .context:before{content:"";position:absolute;left:-17px;top:52px;width:17px;height:2px;background:var(--red)}
+    .context-title{font-weight:900;color:#8f1017;margin-bottom:10px}
+    .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px}
+    .ctx-grid span{display:block;color:var(--muted);font-size:12px;margin-bottom:3px}
+    .ctx-note{margin-top:10px;color:#9b1c24;font-size:12px}
+    .bubble{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:15px;line-height:1.6;font-size:13px;margin-bottom:14px}
+    .bubble h3{margin:0 0 8px;font-size:15px}.bubble ul{margin:8px 0 0 18px;padding:0}.bubble li{margin-bottom:7px}
+    .chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .chip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:11px;min-height:70px;text-align:left;cursor:pointer;color:#334155}
+    .chip:hover{border-color:#a6d5d9;background:var(--teal-soft)}
+    .chip b{display:block;color:#111827;margin-bottom:5px}
+    .ask{border:1px solid var(--line);border-radius:8px;height:44px;display:flex;align-items:center;padding:0 10px;gap:8px;background:#fff}
+    .ask input{border:0;outline:0;flex:1;font-size:13px;color:#334155}
+    .send{border:0;background:var(--red);color:#fff;border-radius:8px;height:30px;padding:0 12px;cursor:pointer}
+    .btns{display:flex;gap:9px;margin-top:10px}
+    .btn{height:34px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:0 11px;color:#334155;cursor:pointer}
+    .btn.primary{border-color:#a6d5d9;background:var(--teal-soft);color:var(--teal);font-weight:800}
+    .event-log{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;color:var(--muted);font-size:12px;line-height:1.55}
+    .flash{animation:flash .5s ease}
+    @keyframes flash{0%{box-shadow:0 0 0 0 rgba(201,20,30,.32)}100%{box-shadow:0 0 0 12px rgba(201,20,30,0)}}
+    @media(max-width:1500px){.shell{grid-template-columns:56px minmax(760px,1fr) 430px}.value{font-size:28px}.grid2{grid-template-columns:1fr 1fr}.grid2 .panel:nth-child(3){grid-column:1/3}.top-actions .pill:nth-child(3){display:none}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo">工</div><span>ICBC ASIA</span></div>
+    <div class="title">MAVA AI 智能财会助手 · OIC 经营看板</div>
+    <div class="top-actions">
+      <div class="pill">📅 2026-05-05</div>
+      <div class="pill">👤 OIC：EE001408023</div>
+      <div class="pill">币种：港元 / 人民币折算</div>
+      <div class="avatar">MA</div>
+    </div>
+  </div>
+  <div class="shell">
+    <aside class="rail"><div class="nav active">⌂</div><div class="nav">▦</div><div class="nav">☰</div><div class="nav">◎</div><div class="nav">⚙</div></aside>
+    <main class="main">
+      <div class="head">
+        <div><h1>OIC 维度经营驾驶舱</h1><p>点击第一行四个指标，第二行和第三行将按当前指标同步刷新；右侧助手自动带入上下文。</p></div>
+        <div class="status"><span class="dot"></span> 数据更新时间：2026-05-05 11:30 (UTC+8)</div>
+      </div>
+      <section class="kpis" id="kpis"></section>
+      <section class="grid2">
+        <div class="panel"><div class="panel-head"><div><h2 id="trendTitle"></h2><div class="sub">最近 30 天，单位：百万港元</div></div><div class="sub">↗ ⋮</div></div><svg id="lineChart"></svg></div>
+        <div class="panel"><div class="panel-head"><div><h2 id="monthTitle"></h2><div class="sub">月度余额/收入与环比</div></div><div class="sub">↗ ⋮</div></div><svg id="barChart"></svg></div>
+        <div class="panel" id="rankPanel"><div class="panel-head"><div><h2 id="rankTitle"></h2><div class="sub">按当前 OIC 产品层级；点击产品可筛选客户</div></div><div class="sub">Rank</div></div><table id="rankTable"></table></div>
+      </section>
+      <section class="bottom" id="customerPanel">
+        <div class="panel-head"><div><h2 id="custTitle"></h2><div class="sub">点击客户行进入客户贡献上下文；可进一步让助手生成客户摘要</div></div><div class="sub">Top 20 / Demo 展示前 6</div></div>
+        <table id="customerTable"></table>
+      </section>
+    </main>
+    <aside class="chat">
+      <div class="chat-head"><span>✦ AI 分析助手</span><span style="font-size:14px;color:#64748b">⛶ ↻ ⋯</span></div>
+      <div class="chat-body">
+        <div class="context" id="contextCard"><div class="context-title">当前上下文（来自 OIC 看板点击）</div><div class="ctx-grid" id="ctxGrid"></div><div class="ctx-note" id="ctxNote"></div></div>
+        <div class="bubble" id="analysis"></div>
+        <div class="sub" style="font-weight:900;margin:0 0 10px;color:#334155">推荐分析</div>
+        <div class="chips" id="chips"></div>
+        <div class="ask"><input id="askInput" placeholder="请输入要进一步分析的问题，例如：这个指标为什么变化？哪个产品拖累？Top 客户是谁？" /><button class="send" id="sendBtn">发送</button></div>
+        <div class="btns"><button class="btn primary" id="filterBtn">筛选看板</button><button class="btn" id="reportBtn">生成报告</button><button class="btn" id="attachBtn">附加明细</button></div>
+        <div class="event-log" id="eventLog">等待交互：点击 KPI / 产品 / 客户 / 推荐分析。</div>
+      </div>
+    </aside>
+  </div>
+</div>
+<script>
+const DATA={
+ deposit:{code:"DEP_BAL",name:"存款",value:"56.90",unit:"亿港元",d:"+0.19",dp:"+0.35%",m:"+2.74",mp:"+5.07%",y:"+7.16",yp:"+14.41%",trend:"存款 30 天趋势",month:"存款按月趋势",rank:"存款产品贡献 Rank",cust:"客户按存款贡献 Top20",products:[["MA_N112_1","定期存款 - 非CMB分润",27.6,1.12,"+6.1%"],["MA_N1111_1","活期存款 - 非员工",10.8,0.82,"+8.3%"],["MA_N111_2","储蓄存款",7.4,0.31,"+4.6%"],["MA_N12_1","发行存款证",5.8,-0.16,"-2.7%"],["MA_N112_2","定期存款 - CMB分润",3.9,0.24,"+3.2%"],["MA_N1111_2","活期存款 - 员工",1.4,0.06,"+2.1%"]],customers:["ABC International Holdings Ltd.","Global Trade Partners Ltd.","Sunrise Group Co., Ltd.","Evergreen Infrastructure Ltd.","Asia Pacific Logistics Co.","North Bay Trading Ltd."],tone:"存款较上月增加，主要由定期存款及活期非员工账户拉动。建议优先查看定期存款到期续作和大额客户流入来源。"},
+ loan:{code:"LOAN_BAL",name:"贷款",value:"59.92",unit:"亿港元",d:"-0.14",dp:"-0.23%",m:"+0.11",mp:"+0.18%",y:"+2.60",yp:"+4.80%",trend:"贷款 30 天趋势",month:"贷款按月趋势",rank:"贷款产品贡献 Rank",cust:"客户按贷款贡献 Top20",products:[["MA_M111_1","房产按揭贷款",20.4,-0.06,"-0.3%"],["MA_M111_8","贸易融资",9.8,0.32,"+3.4%"],["MA_M111_7","银团贷款",7.6,-0.18,"-2.3%"],["MA_M111_3","个人贷款",6.1,0.09,"+1.5%"],["MA_M111_4","税务贷款",4.2,0.16,"+4.1%"],["MA_M111_9","支票贴现",3.8,-0.05,"-1.2%"],["MA_M111_6","定期循环贷款",2.9,0.11,"+3.8%"],["MA_M111_11","信用卡贷款",1.7,0.04,"+2.6%"]],customers:["Harbour Property Finance Ltd.","Pearl River Manufacturing Ltd.","Pacific Trade Finance Ltd.","Golden Bridge Holdings Ltd.","Apex Import Export Ltd.","Unity Retail Group Ltd."],tone:"贷款余额较昨日回落，主要受银团贷款和房产按揭贷款下降影响；贸易融资和税务贷款仍有正贡献，可进一步下钻客户层面。"},
+ lowcost:{code:"LOW_COST_DEP",name:"低息存款",value:"18.17",unit:"亿港元",d:"+0.13",dp:"+0.70%",m:"+1.26",mp:"+7.41%",y:"+2.27",yp:"+14.28%",trend:"低息存款 30 天趋势",month:"低息存款按月趋势",rank:"低息存款产品贡献 Rank",cust:"客户按低息存款贡献 Top20",products:[["MA_N1111_1","活期存款 - 非员工",10.5,0.72,"+7.4%"],["MA_N111_2","储蓄存款",6.3,0.38,"+6.2%"],["MA_N1111_2","活期存款 - 员工",1.4,0.05,"+3.0%"]],customers:["Bright Future Holdings Ltd.","Blue Ocean Trading Ltd.","Metro Services Co., Ltd.","Fortune Technology Ltd.","Kingdom Retail Ltd.","Loyal Capital Ltd."],tone:"低息存款延续增长，是当前 OIC 负债结构改善的主要来源；建议关注活期非员工账户的稳定性和客户资金留存。"},
+ fee:{code:"NON_INTEREST_INCOME",name:"非息收入",value:"1.28",unit:"亿港元",d:"+0.01",dp:"+5.79%",m:"+0.18",mp:"+16.38%",y:"+0.53",yp:"+70.67%",trend:"非息收入 30 天趋势",month:"非息收入按月趋势",rank:"非息收入来源 Rank",cust:"客户按非息收入贡献 Top20",products:[["MA_A12_1","收费及佣金收入",0.62,0.07,"+12.5%"],["MA_A13_1","交易业务净收入",0.28,0.04,"+16.0%"],["MA_A13_0","财资业务净收入",0.19,0.03,"+14.1%"],["MA_A13_2","FVPL金融资产及负债净收益",0.13,0.02,"+11.8%"],["MA_A12_2","收费及佣金支出抵减",0.06,-0.01,"-3.2%"]],customers:["Summit Securities Ltd.","Central Wealth Ltd.","Oriental Asset Mgmt Ltd.","Prime Insurance Brokers Ltd.","Union Global Markets Ltd.","Navigator Advisory Ltd."],tone:"非息收入月内增长较快，主要来自收费及佣金收入和交易业务净收入。建议进一步核对一次性收入和可持续收入占比。"}
+};
+const STATE={metric:"deposit",product:null,customer:null,action:"overview"};
+const ORDER=["deposit","loan","lowcost","fee"];
+function cls(v){return String(v).startsWith("-")?"neg":"pos"}
+function metric(){return DATA[STATE.metric]}
+function setLog(msg){document.getElementById("eventLog").textContent=`${new Date().toLocaleTimeString()} · ${msg}`}
+function flash(id){const el=document.getElementById(id);el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash")}
+function renderKPIs(){document.getElementById("kpis").innerHTML=ORDER.map(k=>{const m=DATA[k],a=k===STATE.metric?" active":"";return `<article class="kpi${a}" data-metric="${k}"><h3>${m.name}</h3><div class="value">${m.value}<span>${m.unit}</span></div><div class="delta"><span>较昨日</span><b>${m.d}</b><b class="${cls(m.dp)}">${m.dp}</b><span>较上月</span><b>${m.m}</b><b class="${cls(m.mp)}">${m.mp}</b><span>较年初</span><b>${m.y}</b><b class="${cls(m.yp)}">${m.yp}</b></div></article>`}).join("");document.querySelectorAll(".kpi").forEach(el=>el.onclick=()=>selectMetric(el.dataset.metric))}
+function lineSvg(){const key=STATE.metric;const base={deposit:55,loan:60.5,lowcost:16.8,fee:1.0}[key];const vals=Array.from({length:30},(_,i)=>base+Math.sin(i/4)*.26+i*(key==="loan"?-.006:.035)+(i%7===0?.08:0));const min=Math.min(...vals)-.2,max=Math.max(...vals)+.2,w=420,h=210,p=28;const pts=vals.map((v,i)=>[p+i*(w-2*p)/29,h-p-(v-min)/(max-min)*(h-2*p)]);const path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");return `<svg id="lineChart" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="lg${key}" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c9141e" stop-opacity=".18"/><stop offset="1" stop-color="#c9141e" stop-opacity="0"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/3}" y2="${p+i*(h-2*p)/3}" stroke="#e6ebf1"/>`).join("")}<path d="${path} L ${w-p},${h-p} L ${p},${h-p} Z" fill="url(#lg${key})"/><path d="${path}" fill="none" stroke="#c9141e" stroke-width="3"/>${pts.filter((_,i)=>i%4===0||i===29).map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#c9141e" stroke-width="2"/>`).join("")}<text x="${p}" y="${h-5}" font-size="12" fill="#64748b">04-06</text><text x="${w/2-18}" y="${h-5}" font-size="12" fill="#64748b">04-21</text><text x="${w-p-34}" y="${h-5}" font-size="12" fill="#64748b">05-05</text></svg>`}
+function barSvg(){const key=STATE.metric,w=420,h=210,p=32;let vals=[4.1,4.8,5.3,5.0,5.7,6.0,5.2,5.5,5.8,6.1,6.4,6.8].map(v=>key==="fee"?v/5:key==="lowcost"?v*2.8:v*9),max=Math.max(...vals)*1.15;let bars=vals.map((v,i)=>{let x=p+i*30,y=h-p-v/max*(h-2*p);return `<rect x="${x}" y="${y}" width="19" height="${h-p-y}" fill="#087f8c"/><text x="${x-1}" y="${h-8}" font-size="11" fill="#64748b">${i+1}</text>`}).join("");let pts=vals.map((v,i)=>[p+9+i*30,h-p-(Math.sin(i/1.8)+1.3)/2.8*(h-2*p)]);let path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");return `<svg id="barChart" viewBox="0 0 ${w} ${h}">${[0,1,2].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/2}" y2="${p+i*(h-2*p)/2}" stroke="#e6ebf1"/>`).join("")}${bars}<path d="${path}" fill="none" stroke="#c9141e" stroke-width="2.5"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff" stroke="#c9141e" stroke-width="2"/>`).join("")}<text x="300" y="22" font-size="12" fill="#c9141e">环比增速</text></svg>`}
+function renderRank(){const m=metric();document.getElementById("rankTable").innerHTML=`<tr><th>Rank</th><th>产品</th><th>余额/收入</th><th>较上月</th><th>增幅</th></tr>`+m.products.map((r,i)=>`<tr class="clickable ${STATE.product?.code===r[0]?"selected":""}" data-product="${r[0]}"><td>${i+1}</td><td>${r[1]}</td><td>${r[2].toFixed(2)}</td><td class="barcell"><span class="bar ${r[3]<0?"negbar":""}" style="width:${Math.min(Math.abs(r[3])*42,94)}px"></span><span class="bartext ${r[3]<0?"neg":"pos"}">${r[3]>0?"+":""}${r[3].toFixed(2)}</span></td><td class="${cls(r[4])}">${r[4]}</td></tr>`).join("");document.querySelectorAll("#rankTable tr[data-product]").forEach(row=>row.onclick=()=>selectProduct(row.dataset.product))}
+function renderCustomers(){const m=metric();const selectedProduct=STATE.product?.name||"全部产品";document.getElementById("customerTable").innerHTML=`<tr><th>Rank</th><th>客户名称</th><th>类型</th><th>行业</th><th>${m.name}</th><th>较上月</th><th>增幅</th><th>占比</th></tr>`+m.customers.map((c,i)=>{const val=STATE.metric==="fee"?0.08+i*.02:7.8-i*.72,chg=.62-i*.05;return `<tr class="clickable ${STATE.customer===c?"selected":""}" data-customer="${c}"><td>${i+1}</td><td>${c}</td><td>${i<4?"Corporate":"SME"}</td><td>${["Manufacturing","Trading","Real Estate","Logistics","Financial Services","Retail"][i]}</td><td>${val.toFixed(2)}</td><td class="${chg<0?"neg":"pos"}">${chg>0?"+":""}${chg.toFixed(2)}</td><td class="pos">+${(7.8-i*.6).toFixed(2)}%</td><td>${(1.52-i*.13).toFixed(2)}%</td></tr>`}).join("");document.getElementById("custTitle").textContent=`${m.cust}${STATE.product?" · "+selectedProduct:""}`;document.querySelectorAll("#customerTable tr[data-customer]").forEach(row=>row.onclick=()=>selectCustomer(row.dataset.customer))}
+function renderCharts(){const m=metric();document.getElementById("trendTitle").textContent=m.trend;document.getElementById("monthTitle").textContent=m.month;document.getElementById("rankTitle").textContent=m.rank;document.getElementById("lineChart").outerHTML=lineSvg();document.getElementById("barChart").outerHTML=barSvg()}
+function renderChat(){const m=metric(),p=STATE.product,c=STATE.customer;document.getElementById("ctxGrid").innerHTML=[["指标",m.name],["OIC","EE001408023"],["日期","2026-05-05"],["产品",p?p.name:"全部产品"],["客户",c||"未选中"],["粒度","日 / 月 / 产品 / 客户"]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");document.getElementById("ctxNote").textContent=`当前 context 已包含 metric_code=${m.code}${p?`, product_code=${p.code}`:""}${c?`, customer_name=${c}`:""}`;let headline=c?`已进入客户「${c}」的 ${m.name} 贡献分析` : p?`已筛选产品「${p.name}」下的 ${m.name} 贡献`:`已按 OIC 维度分析 ${m.name}`;let body=STATE.action==="drivers"?`建议从产品贡献、客户 Top20、近 30 天波动三个角度解释 ${m.name} 变化，数值和排名由接口返回，模型只负责文字归纳。`:STATE.action==="report"?`可以将当前上下文、趋势、产品 Rank、客户 Top20 组装为 analysis_pack，并传给生成报告模块生成 OIC 摘要。`:STATE.action==="filter"?`助手可反向写入筛选条件，例如限定产品、客户类型、行业或币种，然后触发看板刷新。`:m.tone;document.getElementById("analysis").innerHTML=`<h3>${headline}</h3><ul><li>当前 ${m.name} 为 <b>${m.value}${m.unit}</b>，较上月 ${m.m}，增幅 ${m.mp}。</li><li>${body}</li><li>第二行展示 30 天趋势、按月走势和产品 Rank；第三行展示客户 Top20 贡献。</li></ul>`;const chips=[["drivers","分析变动原因","拆解产品、客户和时间贡献"],["rank","查看产品 Rank","按当前指标展示产品贡献"],["top","查看 Top20 客户","定位核心客户增减来源"],["report","生成 OIC 摘要","生成可放入经营报告的文字"]];document.getElementById("chips").innerHTML=chips.map(x=>`<button class="chip" data-action="${x[0]}"><b>${x[1]}</b>${x[2]}</button>`).join("");document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>selectAction(b.dataset.action))}
+function render(){renderKPIs();renderCharts();renderRank();renderCustomers();renderChat()}
+function selectMetric(k){STATE.metric=k;STATE.product=null;STATE.customer=null;STATE.action="overview";render();flash("contextCard");setLog(`点击 KPI：${DATA[k].name}，已刷新趋势、产品 Rank、客户 Top20 和右侧上下文。`)}
+function selectProduct(code){const m=metric(),r=m.products.find(x=>x[0]===code);STATE.product={code:r[0],name:r[1]};STATE.customer=null;STATE.action="product";render();flash("customerPanel");flash("contextCard");setLog(`点击产品：${r[1]}，客户 Top20 已按该产品上下文刷新。`)}
+function selectCustomer(name){STATE.customer=name;STATE.action="customer";render();flash("contextCard");setLog(`点击客户：${name}，右侧助手已切换到客户贡献上下文。`)}
+function selectAction(action){STATE.action=action;renderChat();flash("analysis");setLog(`点击推荐分析：${{drivers:"分析变动原因",rank:"查看产品 Rank",top:"查看 Top20 客户",report:"生成 OIC 摘要"}[action]}。`);if(action==="rank")flash("rankPanel");if(action==="top")flash("customerPanel")}
+document.getElementById("sendBtn").onclick=()=>{const v=document.getElementById("askInput").value.trim();if(!v)return;STATE.action=v.includes("报告")?"report":v.includes("客户")?"top":v.includes("产品")?"rank":"drivers";renderChat();flash("analysis");setLog(`自然语言追问：${v}`);document.getElementById("askInput").value=""}
+document.getElementById("askInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("sendBtn").click()})
+document.getElementById("filterBtn").onclick=()=>selectAction("filter")
+document.getElementById("reportBtn").onclick=()=>selectAction("report")
+document.getElementById("attachBtn").onclick=()=>{setLog("已模拟附加当前明细表：产品 Rank + 客户 Top20。");flash("customerPanel")}
+render();
+</script>
+</body>
+</html>

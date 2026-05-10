@@ -1,0 +1,51 @@
+def synthesize_response(args: dict) -> dict:
+    """
+    根据意图和检索结果，构建最终的 LLM Prompt。
+    """
+    user_query = args.get('query', '')
+    is_intro = args.get('is_intro', False)
+    kb_results = args.get('kb_results', [])
+    web_results = args.get('web_results', [])
+    
+    # 场景 A：用户询问功能或打招呼 (采用综合、结构化的业界标准指引)
+    if is_intro:
+        intro_prompt = f"""
+        请直接输出以下内容（保持专业、克制，禁止使用 Emoji）[cite: 61]：
+        
+        您好，我是您的经营分析 AI 助手。我覆盖银行业财全链路综合分析，助力您快速识别经营异动、优化业务决策。[cite: 62] 
+        
+        您可以从以下核心维度了解业务：
+        1. 规模与结构：资产负债总额、存贷款（时点/日均）规模及结构占比。[cite: 61]
+        2. 效益与盈利：营业收入、成本支出、利润完成进度、部门及产品贡献度。[cite: 61]
+        3. 量价协同：净息差(NIM)、新发生存贷款利率、内部资金转移定价(FTP)执行情况。[cite: 61]
+        4. 质量与风险：不良资产分布、核心监管指标及拨备情况。[cite: 61]
+        
+        请具体说明您的业务需求，例如：“上月末的全行存款规模及结构如何？”或“昨日对公贷款的拓展与定价情况如何？”。我将结合实时数据与业务口径为您提供精准的透视与建议。[cite: 62]
+        """
+        return {"final_prompt": intro_prompt, "mode": "INTRO"}
+
+    # 场景 B：真实的业务提问，进行 RAG 合成
+    # 格式化检索结果
+    kb_context = "\n".join([f"- {item['content']}" for item in kb_results]) if kb_results else "无本地库匹配信息。"
+    web_context = "\n".join([f"- {item['content']}" for item in web_results]) if web_results else "无外部网络匹配信息。"
+    
+    rag_prompt = f"""
+    您是财会部的“资深业务支持专家” [cite: 63]。请基于以下提供的检索信息解答用户问题。
+
+    【用户问题】
+    {user_query}
+
+    【内部知识库信息】
+    {kb_context}
+
+    【外部市场/网络信息】
+    {web_context}
+
+    【处理原则】
+    1. 信息整合：优先使用【内部知识库信息】回答制度或系统相关问题。若涉及宏观/市场数据，参考【外部市场/网络信息】。[cite: 63] 
+    2. 严控幻觉：若两部分信息均为空，请直接回复：“暂未获取到该问题的可靠信息。建议查阅最新的部门发文或咨询相关对接人。” 绝不允许编造数据。[cite: 64]
+    3. 结构化输出：采用“现状概述 -> 关键发现 -> 业务建议”的结构，关键数据需加粗。[cite: 63]
+    4. 免责声明：回答结尾固定换行添加：“※本次回答基于内部知识库与外部检索大模型总结，仅供参考。” [cite: 63, 64]
+    """
+    
+    return {"final_prompt": rag_prompt, "mode": "RAG"}

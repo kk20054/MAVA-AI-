@@ -1,0 +1,63 @@
+import json
+import math
+import ast
+
+def rank_and_truncate(args: dict) -> dict:
+    """
+    对检索结果进行动态阈值过滤和截断，确保喂给大模型的上下文纯净且不超Token。
+    """
+    raw_results_str = args.get('results', '[]')
+    base_threshold = float(args.get('base_threshold', 0.6))
+    top_k = int(args.get('top_k', 3)) [cite: 109]
+    
+    try:
+        results = json.loads(raw_results_str)
+    except json.JSONDecodeError:
+        try:
+            results = ast.literal_eval(raw_results_str) [cite: 109]
+        except (ValueError, SyntaxError):
+            return {"filtered_results": []}
+
+    if not results or not isinstance(results, list):
+        return {"filtered_results": []}
+
+    # 1. 基础硬性过滤
+    filtered = [
+        item for item in results 
+        if isinstance(item, dict) and float(item.get("relevance", 0)) >= base_threshold
+    ] [cite: 110]
+
+    if not filtered:
+        return {"filtered_results": []} # 宁愿无结果走兜底，也不用低质量数据
+
+    # 2. 动态阈值计算 (基于 75% 分位数计算动态水位线)
+    scores = [float(item.get("relevance", 0)) for item in filtered]
+    sorted_scores = sorted(scores)
+    n = len(sorted_scores)
+    
+    p75_index = 0.75 * (n - 1)
+    floor_idx, ceil_idx = math.floor(p75_index), math.ceil(p75_index) [cite: 111]
+    
+    if floor_idx == ceil_idx:
+        p75 = sorted_scores[floor_idx]
+    else:
+        weight = p75_index - floor_idx
+        p75 = sorted_scores[floor_idx] * (1 - weight) + sorted_scores[ceil_idx] * weight [cite: 111, 112]
+        
+    dynamic_thresh = max(p75, max(scores) * 0.8) [cite: 112]
+
+    # 3. 动态过滤与截断
+    high_rel = [item for item in filtered if float(item.get("relevance", 0)) >= dynamic_thresh] [cite: 112]
+    
+    # 保底机制：如果动态阈值切得太狠，退回使用基础过滤的 Top-K
+    if not high_rel:
+        high_rel = sorted(filtered, key=lambda x: float(x["relevance"]), reverse=True)[:top_k] [cite: 112]
+        
+    high_rel_sorted = sorted(high_rel, key=lambda x: float(x["relevance"]), reverse=True)[:top_k] [cite: 112, 113]
+
+    # 文本截断，防止单条结果撑爆上下文
+    for item in high_rel_sorted:
+        if "content" in item and isinstance(item["content"], str):
+            item["content"] = item["content"][:2000] # 每条限制 2000 字符
+
+    return {"filtered_results": high_rel_sorted}

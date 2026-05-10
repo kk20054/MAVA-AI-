@@ -1,0 +1,40 @@
+import json
+import datetime
+import re
+
+def reformulate_query(args: dict) -> dict:
+    """
+    对用户输入进行改写，并拦截引言/问候意图。
+    """
+    user_query = args.get('query', '').strip()
+    current_date = datetime.date.today().strftime('%Y-%m-%d')
+    
+    # 1. 规则引擎前置拦截：判断是否为询问功能或打招呼
+    intro_keywords = ['你能做什么', '介绍一下', '怎么用', '功能', '你是谁', '你好', 'hi']
+    is_intro = any(keyword in user_query.lower() for keyword in intro_keywords)
+    
+    # 如果判断为引言意图，直接短路，不生成搜索词
+    if is_intro or len(user_query) <= 2:
+        return {
+            "is_intro": True,
+            "kb_query": "",
+            "web_query": "",
+            "status": "SHORT_CIRCUIT"
+        }
+    
+    # 2. 调用 LLM 进行查询改写 (此处为模拟大模型输出的处理逻辑)
+    # 实际应用中，这里会调用一个轻量级 LLM (如 Flash) 执行改写 Prompt
+    # Prompt 示例："请提取 query 中的财会/业务实体作为 kb_query，并结合当前日期生成适合外部搜索引擎的 web_query。"
+    
+    # 模拟 LLM 提取结果
+    llm_mock_output = {
+        "kb_query": f"{user_query} 财务制度 考核口径", 
+        "web_query": f"{user_query} 宏观经济 最新数据 {current_date[:4]}年"
+    }
+    
+    return {
+        "is_intro": False,
+        "kb_query": llm_mock_output['kb_query'],
+        "web_query": llm_mock_output['web_query'],
+        "status": "PROCEED_TO_SEARCH"
+    }

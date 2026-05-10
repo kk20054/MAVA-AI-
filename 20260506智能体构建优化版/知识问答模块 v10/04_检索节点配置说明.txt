@@ -1,0 +1,50 @@
+检索节点配置说明
+
+一、BKS_justSearch
+
+输入：
+- query = kb_query
+
+输出进入：
+- 06-2_BKS知识库多信号筛选 v10.py 的 bks_result
+
+建议：
+- 对 INTERNAL_POLICY、FINANCE_DEFINITION 类问题，BKS 是主来源。
+- 对 MARKET_RATE 类问题，BKS 可返回历史周报、指标解释或背景资料，但不应压过联网最新结果。
+
+二、WebSearch_public
+
+输入：
+- query = web_query
+
+输出进入：
+- 06-1_联网检索多信号筛选 v10.py 的 web_result
+
+建议：
+- 对 MARKET_RATE、MACRO_NEWS、ICBC_PUBLIC 类问题，联网结果是重要来源。
+- WebSearch 原始 relevance 可能为 0 或分布不稳定，不能直接用单一阈值删除。
+
+三、筛选后融合
+
+06-1 输出 final_result → 作为 06-3 的 web_results
+06-2 输出 final_result → 作为 06-3 的 kb_results
+06-3 输出：
+- kb_final_results
+- web_final_results
+- final_context
+- context_stats
+
+07_合成生成与引言兜底 v10.py 优先使用 final_context；如果未接 06-3，也可兼容 kb_results/web_results。
+
+四、新增参数透传
+
+为适配已发布工作流，v10 新增字段不改变检索节点输入，但建议从 02 透传至 07：
+
+- answer_goal：决定答案组织方式，如 latest_value、definition、procedure。
+- time_profile：包含时间表达、解析日期范围、口径日期和是否要求最新。
+- entity_profile：包含核心实体、币种、期限和默认假设。
+- classification_confidence：意图识别置信度。
+- rewrite_reason：查询改写理由。
+- ambiguity_flags：缺失期限、默认币种、要求联网最新等不确定点。
+
+如果暂时未透传这些字段，07 会自动使用默认值，不影响已发布链路运行。
