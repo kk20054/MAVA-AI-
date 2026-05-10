@@ -94,6 +94,19 @@ v9 的核心变化：
 - 数据切片新增经营诊断素材包，让模型输出更接近日常经营分析
 - 修复 v8.1 中下降类异动容易被写成增长方向的问题
 
+2026-05-10 架构迭代方向：
+
+- 数据查询、OIC/MO 经营看板、生成报告统一消费 `analysis_pack`
+- 看板点击统一产出 `dashboard_context`，避免让模型猜测用户点击行为
+- 指标口径建议沉淀为 `dim_metric_registry`，产品口径沉淀为 `dim_metric_product_mapping`
+- 客户 TopN、导出明细、生成报告需要纳入权限与审计链路
+
+项目级方案见：
+
+```text
+MAVA AI智能体/docs/问数助手与经营看板架构迭代方案.md
+```
+
 ### 3. 生成报告模块
 
 当前路径：
@@ -135,8 +148,9 @@ MAVA AI智能体/examples/
 - `客户维报告demo/客户维表4报告demo.html`
 - `OIC看板联动demo/oic_dashboard_demo.html`
 - `OIC看板联动demo/oic_dashboard_interactive_demo.html`
+- `OIC看板联动demo/OIC看板交互Demo与落地说明_v3.md`
 
-OIC 看板联动 demo 用于展示指标卡、趋势、产品排名、客户下钻和对话框上下文联动的设计思路。
+OIC 看板联动 demo 用于展示指标卡、趋势、产品排名、客户下钻、经营关注和对话框上下文联动的设计思路。当前 `oic_dashboard_interactive_demo.html` 已升级为 OIC/MO 经营看板原型，重点演示 `dashboard_context`、推荐动作、自然语言追问和生成报告入口如何衔接。
 
 ## 历史版本
 

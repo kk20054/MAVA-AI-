@@ -3,162 +3,942 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MAVA OIC 经营看板交互 Demo</title>
+  <title>MAVA AI 经营看板 Demo</title>
   <style>
-    :root {
-      --red:#c9141e; --red-2:#8f1017; --red-soft:#fff3f4;
-      --teal:#087f8c; --teal-soft:#edfafa; --green:#087443;
-      --ink:#162033; --muted:#64748b; --line:#d9e0ea; --soft:#f6f8fb;
-      --panel:#ffffff; --warn:#b45309;
+    :root{
+      --red:#c20f1f;
+      --red-dark:#8f0d18;
+      --red-soft:#fff1f3;
+      --teal:#087f8c;
+      --teal-soft:#e8f7f8;
+      --green:#057a55;
+      --amber:#b7791f;
+      --ink:#172033;
+      --muted:#64748b;
+      --line:#d7dee9;
+      --soft:#f4f7fb;
+      --panel:#fff;
+      --blue:#2c5aa0;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--soft);font-family:"Microsoft YaHei","Segoe UI",Arial,sans-serif;color:var(--ink)}
-    button,input{font-family:inherit}
-    .app{min-width:1360px;height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#fff 0,#f7f9fc 76px,#f6f8fb 100%)}
-    .topbar{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 22px;background:rgba(255,255,255,.96)}
-    .brand{display:flex;align-items:center;gap:12px;width:230px;font-size:25px;font-weight:900;letter-spacing:.2px}
-    .logo{width:34px;height:34px;border:3px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:18px;font-weight:900}
-    .title{border-left:1px solid var(--line);padding-left:18px;font-size:18px;font-weight:800}
-    .top-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
-    .pill{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 14px;display:flex;align-items:center;gap:8px;font-size:13px;color:#334155}
-    .avatar{width:36px;height:36px;border-radius:50%;background:#eef2f7;display:grid;place-items:center;font-weight:800}
-    .shell{flex:1;display:grid;grid-template-columns:64px minmax(820px,1fr) 500px;min-height:0}
-    .rail{background:#fff;border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:12px}
-    .nav{height:42px;border-radius:10px;display:grid;place-items:center;color:#64748b;font-size:18px}
-    .nav.active{background:var(--red-soft);color:var(--red);border-left:3px solid var(--red)}
-    .main{padding:18px;overflow:auto}
-    .head{display:flex;align-items:end;justify-content:space-between;margin-bottom:12px}
-    .head h1{margin:0;font-size:22px}
-    .head p{margin:5px 0 0;color:var(--muted);font-size:13px}
-    .status{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}
-    .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
-    .kpi{border:1px solid var(--line);border-radius:8px;background:#fff;min-height:152px;padding:14px;cursor:pointer;transition:.16s ease;position:relative;overflow:hidden}
-    .kpi:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.06)}
-    .kpi.active{border:2px solid var(--red);background:linear-gradient(180deg,#fff5f5 0,#fff 72%);box-shadow:0 8px 24px rgba(201,20,30,.09)}
-    .kpi.active:after{content:"当前分析";position:absolute;right:12px;top:12px;color:var(--red);font-size:12px;font-weight:800}
-    .kpi h3{margin:0;font-size:16px}
-    .value{font-size:33px;font-weight:900;margin:18px 0 8px}
-    .value span{font-size:14px;color:#475569;margin-left:6px}
-    .delta{display:grid;grid-template-columns:58px 1fr 70px;gap:8px;font-size:12px;line-height:1.85}
-    .pos{color:var(--green);font-weight:800}.neg{color:var(--red);font-weight:800}
-    .grid2{display:grid;grid-template-columns:1fr 1fr 1.22fr;gap:12px;margin-bottom:12px}
-    .panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;min-height:292px}
-    .panel-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:8px}
-    .panel h2{margin:0;font-size:16px}
-    .sub{color:var(--muted);font-size:12px;margin-top:4px}
-    svg{width:100%;height:210px;display:block}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th{background:#f2f5f9;color:#475569;text-align:left;padding:8px;border-bottom:1px solid var(--line);font-weight:800}
-    td{padding:7px 8px;border-bottom:1px solid #edf1f6}
-    tr.clickable{cursor:pointer}
-    tr.clickable:hover td{background:#fff8f8}
+    body{
+      margin:0;
+      background:var(--soft);
+      color:var(--ink);
+      font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif;
+      letter-spacing:0;
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{
+      min-height:100vh;
+      min-width:1180px;
+      display:grid;
+      grid-template-rows:64px 1fr;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      padding:0 22px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      width:232px;
+      font-weight:900;
+      font-size:25px;
+      white-space:nowrap;
+    }
+    .brand-mark{
+      width:36px;
+      height:36px;
+      border:3px solid var(--red);
+      color:var(--red);
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      font-size:18px;
+    }
+    .title{
+      padding-left:18px;
+      border-left:1px solid var(--line);
+      font-size:18px;
+      font-weight:800;
+      min-width:320px;
+    }
+    .top-actions{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .control{
+      height:38px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#334155;
+      border-radius:7px;
+      padding:0 12px;
+      min-width:130px;
+    }
+    .shell{
+      min-height:0;
+      display:grid;
+      grid-template-columns:68px minmax(780px,1fr) 440px;
+    }
+    .rail{
+      border-right:1px solid var(--line);
+      background:#fff;
+      padding:14px 9px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .nav-btn{
+      height:44px;
+      width:50px;
+      border:0;
+      border-radius:8px;
+      background:#fff;
+      color:#5b6b84;
+      font-weight:800;
+    }
+    .nav-btn.active{
+      background:var(--red-soft);
+      color:var(--red);
+      border-left:3px solid var(--red);
+    }
+    .workspace{
+      overflow:auto;
+      padding:18px;
+    }
+    .page-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      gap:18px;
+      margin-bottom:12px;
+    }
+    .page-head h1{
+      margin:0;
+      font-size:22px;
+      line-height:1.25;
+    }
+    .tabs{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .seg{
+      height:32px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#475569;
+      border-radius:7px;
+      padding:0 12px;
+    }
+    .seg.active{
+      background:#172033;
+      color:#fff;
+      border-color:#172033;
+    }
+    .health{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .health::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--green);
+    }
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .kpi{
+      position:relative;
+      min-height:150px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:var(--panel);
+      padding:14px;
+      overflow:hidden;
+      transition:transform .16s ease,box-shadow .16s ease,border .16s ease;
+      text-align:left;
+    }
+    .kpi:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(20,31,54,.07)}
+    .kpi.active{
+      border:2px solid var(--red);
+      background:linear-gradient(180deg,#fff5f6 0%,#fff 78%);
+    }
+    .kpi.active::after{
+      content:"ACTIVE";
+      position:absolute;
+      top:12px;
+      right:12px;
+      color:var(--red-dark);
+      font-weight:900;
+      font-size:11px;
+      letter-spacing:0;
+    }
+    .kpi-name{font-size:15px;font-weight:900;margin-bottom:14px}
+    .kpi-value{font-size:32px;font-weight:900;line-height:1.1}
+    .kpi-unit{font-size:13px;color:#475569;margin-left:5px;font-weight:700}
+    .kpi-grid{
+      margin-top:13px;
+      display:grid;
+      grid-template-columns:58px 1fr 62px;
+      gap:4px 7px;
+      font-size:12px;
+      color:#334155;
+      align-items:center;
+    }
+    .pos{color:var(--green);font-weight:800}
+    .neg{color:var(--red);font-weight:800}
+    .warn{color:var(--amber);font-weight:800}
+    .dashboard-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr 1.18fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:8px;
+      min-height:292px;
+      padding:14px;
+    }
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:start;
+      gap:12px;
+      margin-bottom:9px;
+    }
+    .panel h2{
+      margin:0;
+      font-size:16px;
+      line-height:1.3;
+    }
+    .meta{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:3px;
+      line-height:1.35;
+    }
+    .toolbar{
+      display:flex;
+      gap:6px;
+    }
+    .icon-btn{
+      width:30px;
+      height:30px;
+      border:1px solid var(--line);
+      border-radius:7px;
+      background:#fff;
+      color:#475569;
+      font-weight:900;
+    }
+    svg{display:block;width:100%;height:210px}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+    }
+    th{
+      text-align:left;
+      background:#f1f5f9;
+      color:#475569;
+      padding:8px;
+      border-bottom:1px solid var(--line);
+      font-weight:900;
+      white-space:nowrap;
+    }
+    td{
+      padding:7px 8px;
+      border-bottom:1px solid #e9eef5;
+      white-space:nowrap;
+    }
+    tr[data-row]{cursor:pointer}
+    tr[data-row]:hover td{background:#fff8f8}
     tr.selected td{background:var(--red-soft)!important}
-    .barcell{position:relative;min-width:70px}.bar{position:absolute;left:7px;top:10px;height:12px;border-radius:3px;background:var(--teal);opacity:.18}.bar.negbar{background:var(--red)}
-    .bartext{position:relative;font-weight:800}
-    .bottom{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:18px}
-    .chat{border-left:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-width:0}
-    .chat-head{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-weight:900;font-size:17px}
-    .chat-body{padding:16px;overflow:auto}
-    .context{border:1px solid #f0b9be;background:#fffafa;border-radius:8px;padding:13px;margin-bottom:14px;position:relative}
-    .context:before{content:"";position:absolute;left:-17px;top:52px;width:17px;height:2px;background:var(--red)}
-    .context-title{font-weight:900;color:#8f1017;margin-bottom:10px}
-    .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px}
-    .ctx-grid span{display:block;color:var(--muted);font-size:12px;margin-bottom:3px}
-    .ctx-note{margin-top:10px;color:#9b1c24;font-size:12px}
-    .bubble{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:15px;line-height:1.6;font-size:13px;margin-bottom:14px}
-    .bubble h3{margin:0 0 8px;font-size:15px}.bubble ul{margin:8px 0 0 18px;padding:0}.bubble li{margin-bottom:7px}
-    .chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-    .chip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:11px;min-height:70px;text-align:left;cursor:pointer;color:#334155}
-    .chip:hover{border-color:#a6d5d9;background:var(--teal-soft)}
-    .chip b{display:block;color:#111827;margin-bottom:5px}
-    .ask{border:1px solid var(--line);border-radius:8px;height:44px;display:flex;align-items:center;padding:0 10px;gap:8px;background:#fff}
-    .ask input{border:0;outline:0;flex:1;font-size:13px;color:#334155}
-    .send{border:0;background:var(--red);color:#fff;border-radius:8px;height:30px;padding:0 12px;cursor:pointer}
-    .btns{display:flex;gap:9px;margin-top:10px}
-    .btn{height:34px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:0 11px;color:#334155;cursor:pointer}
-    .btn.primary{border-color:#a6d5d9;background:var(--teal-soft);color:var(--teal);font-weight:800}
-    .event-log{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;color:var(--muted);font-size:12px;line-height:1.55}
-    .flash{animation:flash .5s ease}
-    @keyframes flash{0%{box-shadow:0 0 0 0 rgba(201,20,30,.32)}100%{box-shadow:0 0 0 12px rgba(201,20,30,0)}}
-    @media(max-width:1500px){.shell{grid-template-columns:56px minmax(760px,1fr) 430px}.value{font-size:28px}.grid2{grid-template-columns:1fr 1fr}.grid2 .panel:nth-child(3){grid-column:1/3}.top-actions .pill:nth-child(3){display:none}}
+    .bar-wrap{
+      position:relative;
+      min-width:78px;
+    }
+    .bar-bg{
+      position:absolute;
+      left:8px;
+      top:9px;
+      height:13px;
+      border-radius:3px;
+      background:var(--teal);
+      opacity:.16;
+      min-width:8px;
+    }
+    .bar-bg.down{background:var(--red)}
+    .bar-text{position:relative;font-weight:900}
+    .customer-section{
+      min-height:290px;
+      margin-bottom:14px;
+    }
+    .split-row{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:12px;
+    }
+    .alerts{
+      display:grid;
+      gap:9px;
+    }
+    .alert{
+      border:1px solid #e6d7b9;
+      background:#fffaf0;
+      border-radius:7px;
+      padding:11px 12px;
+      font-size:12px;
+      line-height:1.45;
+    }
+    .alert b{display:block;color:#7c4a03;margin-bottom:3px}
+    .assistant{
+      min-width:0;
+      border-left:1px solid var(--line);
+      background:#fff;
+      display:grid;
+      grid-template-rows:58px 1fr;
+    }
+    .assistant-head{
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 16px;
+      font-weight:900;
+      font-size:17px;
+    }
+    .assistant-actions{
+      display:flex;
+      gap:6px;
+    }
+    .assistant-body{
+      overflow:auto;
+      padding:15px;
+    }
+    .context{
+      border:1px solid #efb8be;
+      background:#fffafa;
+      border-radius:8px;
+      padding:13px;
+      margin-bottom:12px;
+      position:relative;
+    }
+    .context::before{
+      content:"";
+      position:absolute;
+      left:-16px;
+      top:46px;
+      width:16px;
+      height:2px;
+      background:var(--red);
+    }
+    .context-title{
+      color:var(--red-dark);
+      font-weight:900;
+      margin-bottom:10px;
+    }
+    .ctx-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px 12px;
+      font-size:13px;
+    }
+    .ctx-grid span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      margin-bottom:3px;
+    }
+    .ctx-code{
+      margin-top:10px;
+      color:#8f0d18;
+      font-size:12px;
+      line-height:1.4;
+      word-break:break-word;
+    }
+    .analysis{
+      border:1px solid var(--line);
+      background:#f8fafc;
+      border-radius:8px;
+      padding:14px;
+      margin-bottom:13px;
+      font-size:13px;
+      line-height:1.65;
+    }
+    .analysis h3{
+      margin:0 0 8px;
+      font-size:15px;
+    }
+    .analysis p{margin:7px 0}
+    .action-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-bottom:13px;
+    }
+    .action-card{
+      min-height:72px;
+      text-align:left;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:8px;
+      padding:11px;
+      color:#334155;
+    }
+    .action-card:hover{
+      background:var(--teal-soft);
+      border-color:#9dd2d7;
+    }
+    .action-card b{
+      display:block;
+      color:#111827;
+      margin-bottom:5px;
+      font-size:13px;
+    }
+    .ask{
+      border:1px solid var(--line);
+      border-radius:8px;
+      height:44px;
+      display:flex;
+      align-items:center;
+      padding:0 8px;
+      gap:8px;
+      background:#fff;
+    }
+    .ask input{
+      flex:1;
+      min-width:0;
+      border:0;
+      outline:0;
+      color:#334155;
+      font-size:13px;
+    }
+    .send{
+      height:30px;
+      border:0;
+      border-radius:7px;
+      background:var(--red);
+      color:#fff;
+      padding:0 12px;
+      font-weight:800;
+    }
+    .assistant-buttons{
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .secondary{
+      height:34px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#334155;
+      border-radius:7px;
+      padding:0 11px;
+    }
+    .secondary.primary{
+      border-color:#9dd2d7;
+      background:var(--teal-soft);
+      color:var(--teal);
+      font-weight:900;
+    }
+    .event-log{
+      margin-top:12px;
+      border-top:1px dashed var(--line);
+      padding-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    .flash{animation:flash .55s ease}
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(194,15,31,.28)}
+      100%{box-shadow:0 0 0 12px rgba(194,15,31,0)}
+    }
+    @media(max-width:1480px){
+      .shell{grid-template-columns:62px minmax(720px,1fr) 410px}
+      .brand{width:210px;font-size:22px}
+      .dashboard-grid{grid-template-columns:1fr 1fr}
+      .dashboard-grid .panel:nth-child(3){grid-column:1 / 3}
+      .kpi-value{font-size:28px}
+      .top-actions .control:nth-child(3){display:none}
+    }
   </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="brand"><div class="logo">工</div><span>ICBC ASIA</span></div>
-    <div class="title">MAVA AI 智能财会助手 · OIC 经营看板</div>
-    <div class="top-actions">
-      <div class="pill">📅 2026-05-05</div>
-      <div class="pill">👤 OIC：EE001408023</div>
-      <div class="pill">币种：港元 / 人民币折算</div>
-      <div class="avatar">MA</div>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">工</div><span>ICBC ASIA</span></div>
+      <div class="title">MAVA AI 智能财会助手 · 经营看板</div>
+      <div class="top-actions">
+        <select class="control" id="viewSelect" aria-label="视角">
+          <option value="OIC">OIC 视角</option>
+          <option value="MO">MO 视角</option>
+        </select>
+        <input class="control" id="dateInput" value="2026-05-05" aria-label="数据日期" />
+        <input class="control" id="oicInput" value="EE001408023" aria-label="OIC 编号" />
+        <select class="control" id="currencySelect" aria-label="币种">
+          <option>港元</option>
+          <option>人民币折算</option>
+          <option>美元折算</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="shell">
+      <nav class="rail" aria-label="主导航">
+        <button class="nav-btn">数</button>
+        <button class="nav-btn active">板</button>
+        <button class="nav-btn">报</button>
+        <button class="nav-btn">知</button>
+        <button class="nav-btn">设</button>
+      </nav>
+
+      <main class="workspace">
+        <section class="page-head">
+          <div>
+            <h1 id="pageTitle">OIC 经营驾驶舱</h1>
+            <div class="health">数据更新时间 2026-05-05 11:30，MAVA 管会口径</div>
+          </div>
+          <div class="tabs" aria-label="看板范围">
+            <button class="seg active" data-scope="oic">OIC</button>
+            <button class="seg" data-scope="team">团队</button>
+            <button class="seg" data-scope="dept">部门</button>
+          </div>
+        </section>
+
+        <section class="kpis" id="kpiArea"></section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 id="trendTitle"></h2>
+                <div class="meta">最近 30 天，单位：百万港元</div>
+              </div>
+              <div class="toolbar"><button class="icon-btn">+</button><button class="icon-btn">...</button></div>
+            </div>
+            <svg id="lineChart" viewBox="0 0 420 210" role="img"></svg>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2 id="monthTitle"></h2>
+                <div class="meta">月度余额/收入与环比速度</div>
+              </div>
+              <div class="toolbar"><button class="icon-btn">+</button><button class="icon-btn">...</button></div>
+            </div>
+            <svg id="barChart" viewBox="0 0 420 210" role="img"></svg>
+          </article>
+
+          <article class="panel" id="rankPanel">
+            <div class="panel-head">
+              <div>
+                <h2 id="rankTitle"></h2>
+                <div class="meta" id="rankMeta"></div>
+              </div>
+              <div class="toolbar"><button class="icon-btn">R</button></div>
+            </div>
+            <table id="rankTable"></table>
+          </article>
+        </section>
+
+        <section class="split-row">
+          <article class="panel customer-section" id="customerPanel">
+            <div class="panel-head">
+              <div>
+                <h2 id="customerTitle"></h2>
+                <div class="meta" id="customerMeta"></div>
+              </div>
+              <div class="toolbar"><button class="icon-btn">C</button></div>
+            </div>
+            <table id="customerTable"></table>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>经营关注</h2>
+                <div class="meta">规则引擎 + analysis_pack 生成</div>
+              </div>
+            </div>
+            <div class="alerts" id="alerts"></div>
+          </article>
+        </section>
+      </main>
+
+      <aside class="assistant">
+        <div class="assistant-head">
+          <span>AI 分析助手</span>
+          <div class="assistant-actions"><button class="icon-btn">↻</button><button class="icon-btn">□</button></div>
+        </div>
+        <div class="assistant-body">
+          <section class="context" id="contextCard">
+            <div class="context-title">当前上下文</div>
+            <div class="ctx-grid" id="ctxGrid"></div>
+            <div class="ctx-code" id="ctxCode"></div>
+          </section>
+          <section class="analysis" id="analysisBox"></section>
+          <div class="meta" style="font-weight:900;color:#334155;margin:0 0 9px">推荐动作</div>
+          <section class="action-grid" id="actionGrid"></section>
+          <div class="ask">
+            <input id="askInput" placeholder="输入追问，例如：为什么变化、只看贸易融资、生成报告" />
+            <button class="send" id="sendBtn">发送</button>
+          </div>
+          <div class="assistant-buttons">
+            <button class="secondary primary" id="filterBtn">筛选看板</button>
+            <button class="secondary" id="reportBtn">生成报告</button>
+            <button class="secondary" id="detailBtn">附加明细</button>
+          </div>
+          <div class="event-log" id="eventLog">等待交互。</div>
+        </div>
+      </aside>
     </div>
   </div>
-  <div class="shell">
-    <aside class="rail"><div class="nav active">⌂</div><div class="nav">▦</div><div class="nav">☰</div><div class="nav">◎</div><div class="nav">⚙</div></aside>
-    <main class="main">
-      <div class="head">
-        <div><h1>OIC 维度经营驾驶舱</h1><p>点击第一行四个指标，第二行和第三行将按当前指标同步刷新；右侧助手自动带入上下文。</p></div>
-        <div class="status"><span class="dot"></span> 数据更新时间：2026-05-05 11:30 (UTC+8)</div>
-      </div>
-      <section class="kpis" id="kpis"></section>
-      <section class="grid2">
-        <div class="panel"><div class="panel-head"><div><h2 id="trendTitle"></h2><div class="sub">最近 30 天，单位：百万港元</div></div><div class="sub">↗ ⋮</div></div><svg id="lineChart"></svg></div>
-        <div class="panel"><div class="panel-head"><div><h2 id="monthTitle"></h2><div class="sub">月度余额/收入与环比</div></div><div class="sub">↗ ⋮</div></div><svg id="barChart"></svg></div>
-        <div class="panel" id="rankPanel"><div class="panel-head"><div><h2 id="rankTitle"></h2><div class="sub">按当前 OIC 产品层级；点击产品可筛选客户</div></div><div class="sub">Rank</div></div><table id="rankTable"></table></div>
-      </section>
-      <section class="bottom" id="customerPanel">
-        <div class="panel-head"><div><h2 id="custTitle"></h2><div class="sub">点击客户行进入客户贡献上下文；可进一步让助手生成客户摘要</div></div><div class="sub">Top 20 / Demo 展示前 6</div></div>
-        <table id="customerTable"></table>
-      </section>
-    </main>
-    <aside class="chat">
-      <div class="chat-head"><span>✦ AI 分析助手</span><span style="font-size:14px;color:#64748b">⛶ ↻ ⋯</span></div>
-      <div class="chat-body">
-        <div class="context" id="contextCard"><div class="context-title">当前上下文（来自 OIC 看板点击）</div><div class="ctx-grid" id="ctxGrid"></div><div class="ctx-note" id="ctxNote"></div></div>
-        <div class="bubble" id="analysis"></div>
-        <div class="sub" style="font-weight:900;margin:0 0 10px;color:#334155">推荐分析</div>
-        <div class="chips" id="chips"></div>
-        <div class="ask"><input id="askInput" placeholder="请输入要进一步分析的问题，例如：这个指标为什么变化？哪个产品拖累？Top 客户是谁？" /><button class="send" id="sendBtn">发送</button></div>
-        <div class="btns"><button class="btn primary" id="filterBtn">筛选看板</button><button class="btn" id="reportBtn">生成报告</button><button class="btn" id="attachBtn">附加明细</button></div>
-        <div class="event-log" id="eventLog">等待交互：点击 KPI / 产品 / 客户 / 推荐分析。</div>
-      </div>
-    </aside>
-  </div>
-</div>
-<script>
-const DATA={
- deposit:{code:"DEP_BAL",name:"存款",value:"56.90",unit:"亿港元",d:"+0.19",dp:"+0.35%",m:"+2.74",mp:"+5.07%",y:"+7.16",yp:"+14.41%",trend:"存款 30 天趋势",month:"存款按月趋势",rank:"存款产品贡献 Rank",cust:"客户按存款贡献 Top20",products:[["MA_N112_1","定期存款 - 非CMB分润",27.6,1.12,"+6.1%"],["MA_N1111_1","活期存款 - 非员工",10.8,0.82,"+8.3%"],["MA_N111_2","储蓄存款",7.4,0.31,"+4.6%"],["MA_N12_1","发行存款证",5.8,-0.16,"-2.7%"],["MA_N112_2","定期存款 - CMB分润",3.9,0.24,"+3.2%"],["MA_N1111_2","活期存款 - 员工",1.4,0.06,"+2.1%"]],customers:["ABC International Holdings Ltd.","Global Trade Partners Ltd.","Sunrise Group Co., Ltd.","Evergreen Infrastructure Ltd.","Asia Pacific Logistics Co.","North Bay Trading Ltd."],tone:"存款较上月增加，主要由定期存款及活期非员工账户拉动。建议优先查看定期存款到期续作和大额客户流入来源。"},
- loan:{code:"LOAN_BAL",name:"贷款",value:"59.92",unit:"亿港元",d:"-0.14",dp:"-0.23%",m:"+0.11",mp:"+0.18%",y:"+2.60",yp:"+4.80%",trend:"贷款 30 天趋势",month:"贷款按月趋势",rank:"贷款产品贡献 Rank",cust:"客户按贷款贡献 Top20",products:[["MA_M111_1","房产按揭贷款",20.4,-0.06,"-0.3%"],["MA_M111_8","贸易融资",9.8,0.32,"+3.4%"],["MA_M111_7","银团贷款",7.6,-0.18,"-2.3%"],["MA_M111_3","个人贷款",6.1,0.09,"+1.5%"],["MA_M111_4","税务贷款",4.2,0.16,"+4.1%"],["MA_M111_9","支票贴现",3.8,-0.05,"-1.2%"],["MA_M111_6","定期循环贷款",2.9,0.11,"+3.8%"],["MA_M111_11","信用卡贷款",1.7,0.04,"+2.6%"]],customers:["Harbour Property Finance Ltd.","Pearl River Manufacturing Ltd.","Pacific Trade Finance Ltd.","Golden Bridge Holdings Ltd.","Apex Import Export Ltd.","Unity Retail Group Ltd."],tone:"贷款余额较昨日回落，主要受银团贷款和房产按揭贷款下降影响；贸易融资和税务贷款仍有正贡献，可进一步下钻客户层面。"},
- lowcost:{code:"LOW_COST_DEP",name:"低息存款",value:"18.17",unit:"亿港元",d:"+0.13",dp:"+0.70%",m:"+1.26",mp:"+7.41%",y:"+2.27",yp:"+14.28%",trend:"低息存款 30 天趋势",month:"低息存款按月趋势",rank:"低息存款产品贡献 Rank",cust:"客户按低息存款贡献 Top20",products:[["MA_N1111_1","活期存款 - 非员工",10.5,0.72,"+7.4%"],["MA_N111_2","储蓄存款",6.3,0.38,"+6.2%"],["MA_N1111_2","活期存款 - 员工",1.4,0.05,"+3.0%"]],customers:["Bright Future Holdings Ltd.","Blue Ocean Trading Ltd.","Metro Services Co., Ltd.","Fortune Technology Ltd.","Kingdom Retail Ltd.","Loyal Capital Ltd."],tone:"低息存款延续增长，是当前 OIC 负债结构改善的主要来源；建议关注活期非员工账户的稳定性和客户资金留存。"},
- fee:{code:"NON_INTEREST_INCOME",name:"非息收入",value:"1.28",unit:"亿港元",d:"+0.01",dp:"+5.79%",m:"+0.18",mp:"+16.38%",y:"+0.53",yp:"+70.67%",trend:"非息收入 30 天趋势",month:"非息收入按月趋势",rank:"非息收入来源 Rank",cust:"客户按非息收入贡献 Top20",products:[["MA_A12_1","收费及佣金收入",0.62,0.07,"+12.5%"],["MA_A13_1","交易业务净收入",0.28,0.04,"+16.0%"],["MA_A13_0","财资业务净收入",0.19,0.03,"+14.1%"],["MA_A13_2","FVPL金融资产及负债净收益",0.13,0.02,"+11.8%"],["MA_A12_2","收费及佣金支出抵减",0.06,-0.01,"-3.2%"]],customers:["Summit Securities Ltd.","Central Wealth Ltd.","Oriental Asset Mgmt Ltd.","Prime Insurance Brokers Ltd.","Union Global Markets Ltd.","Navigator Advisory Ltd."],tone:"非息收入月内增长较快，主要来自收费及佣金收入和交易业务净收入。建议进一步核对一次性收入和可持续收入占比。"}
-};
-const STATE={metric:"deposit",product:null,customer:null,action:"overview"};
-const ORDER=["deposit","loan","lowcost","fee"];
-function cls(v){return String(v).startsWith("-")?"neg":"pos"}
-function metric(){return DATA[STATE.metric]}
-function setLog(msg){document.getElementById("eventLog").textContent=`${new Date().toLocaleTimeString()} · ${msg}`}
-function flash(id){const el=document.getElementById(id);el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash")}
-function renderKPIs(){document.getElementById("kpis").innerHTML=ORDER.map(k=>{const m=DATA[k],a=k===STATE.metric?" active":"";return `<article class="kpi${a}" data-metric="${k}"><h3>${m.name}</h3><div class="value">${m.value}<span>${m.unit}</span></div><div class="delta"><span>较昨日</span><b>${m.d}</b><b class="${cls(m.dp)}">${m.dp}</b><span>较上月</span><b>${m.m}</b><b class="${cls(m.mp)}">${m.mp}</b><span>较年初</span><b>${m.y}</b><b class="${cls(m.yp)}">${m.yp}</b></div></article>`}).join("");document.querySelectorAll(".kpi").forEach(el=>el.onclick=()=>selectMetric(el.dataset.metric))}
-function lineSvg(){const key=STATE.metric;const base={deposit:55,loan:60.5,lowcost:16.8,fee:1.0}[key];const vals=Array.from({length:30},(_,i)=>base+Math.sin(i/4)*.26+i*(key==="loan"?-.006:.035)+(i%7===0?.08:0));const min=Math.min(...vals)-.2,max=Math.max(...vals)+.2,w=420,h=210,p=28;const pts=vals.map((v,i)=>[p+i*(w-2*p)/29,h-p-(v-min)/(max-min)*(h-2*p)]);const path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");return `<svg id="lineChart" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="lg${key}" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c9141e" stop-opacity=".18"/><stop offset="1" stop-color="#c9141e" stop-opacity="0"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/3}" y2="${p+i*(h-2*p)/3}" stroke="#e6ebf1"/>`).join("")}<path d="${path} L ${w-p},${h-p} L ${p},${h-p} Z" fill="url(#lg${key})"/><path d="${path}" fill="none" stroke="#c9141e" stroke-width="3"/>${pts.filter((_,i)=>i%4===0||i===29).map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#c9141e" stroke-width="2"/>`).join("")}<text x="${p}" y="${h-5}" font-size="12" fill="#64748b">04-06</text><text x="${w/2-18}" y="${h-5}" font-size="12" fill="#64748b">04-21</text><text x="${w-p-34}" y="${h-5}" font-size="12" fill="#64748b">05-05</text></svg>`}
-function barSvg(){const key=STATE.metric,w=420,h=210,p=32;let vals=[4.1,4.8,5.3,5.0,5.7,6.0,5.2,5.5,5.8,6.1,6.4,6.8].map(v=>key==="fee"?v/5:key==="lowcost"?v*2.8:v*9),max=Math.max(...vals)*1.15;let bars=vals.map((v,i)=>{let x=p+i*30,y=h-p-v/max*(h-2*p);return `<rect x="${x}" y="${y}" width="19" height="${h-p-y}" fill="#087f8c"/><text x="${x-1}" y="${h-8}" font-size="11" fill="#64748b">${i+1}</text>`}).join("");let pts=vals.map((v,i)=>[p+9+i*30,h-p-(Math.sin(i/1.8)+1.3)/2.8*(h-2*p)]);let path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");return `<svg id="barChart" viewBox="0 0 ${w} ${h}">${[0,1,2].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/2}" y2="${p+i*(h-2*p)/2}" stroke="#e6ebf1"/>`).join("")}${bars}<path d="${path}" fill="none" stroke="#c9141e" stroke-width="2.5"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff" stroke="#c9141e" stroke-width="2"/>`).join("")}<text x="300" y="22" font-size="12" fill="#c9141e">环比增速</text></svg>`}
-function renderRank(){const m=metric();document.getElementById("rankTable").innerHTML=`<tr><th>Rank</th><th>产品</th><th>余额/收入</th><th>较上月</th><th>增幅</th></tr>`+m.products.map((r,i)=>`<tr class="clickable ${STATE.product?.code===r[0]?"selected":""}" data-product="${r[0]}"><td>${i+1}</td><td>${r[1]}</td><td>${r[2].toFixed(2)}</td><td class="barcell"><span class="bar ${r[3]<0?"negbar":""}" style="width:${Math.min(Math.abs(r[3])*42,94)}px"></span><span class="bartext ${r[3]<0?"neg":"pos"}">${r[3]>0?"+":""}${r[3].toFixed(2)}</span></td><td class="${cls(r[4])}">${r[4]}</td></tr>`).join("");document.querySelectorAll("#rankTable tr[data-product]").forEach(row=>row.onclick=()=>selectProduct(row.dataset.product))}
-function renderCustomers(){const m=metric();const selectedProduct=STATE.product?.name||"全部产品";document.getElementById("customerTable").innerHTML=`<tr><th>Rank</th><th>客户名称</th><th>类型</th><th>行业</th><th>${m.name}</th><th>较上月</th><th>增幅</th><th>占比</th></tr>`+m.customers.map((c,i)=>{const val=STATE.metric==="fee"?0.08+i*.02:7.8-i*.72,chg=.62-i*.05;return `<tr class="clickable ${STATE.customer===c?"selected":""}" data-customer="${c}"><td>${i+1}</td><td>${c}</td><td>${i<4?"Corporate":"SME"}</td><td>${["Manufacturing","Trading","Real Estate","Logistics","Financial Services","Retail"][i]}</td><td>${val.toFixed(2)}</td><td class="${chg<0?"neg":"pos"}">${chg>0?"+":""}${chg.toFixed(2)}</td><td class="pos">+${(7.8-i*.6).toFixed(2)}%</td><td>${(1.52-i*.13).toFixed(2)}%</td></tr>`}).join("");document.getElementById("custTitle").textContent=`${m.cust}${STATE.product?" · "+selectedProduct:""}`;document.querySelectorAll("#customerTable tr[data-customer]").forEach(row=>row.onclick=()=>selectCustomer(row.dataset.customer))}
-function renderCharts(){const m=metric();document.getElementById("trendTitle").textContent=m.trend;document.getElementById("monthTitle").textContent=m.month;document.getElementById("rankTitle").textContent=m.rank;document.getElementById("lineChart").outerHTML=lineSvg();document.getElementById("barChart").outerHTML=barSvg()}
-function renderChat(){const m=metric(),p=STATE.product,c=STATE.customer;document.getElementById("ctxGrid").innerHTML=[["指标",m.name],["OIC","EE001408023"],["日期","2026-05-05"],["产品",p?p.name:"全部产品"],["客户",c||"未选中"],["粒度","日 / 月 / 产品 / 客户"]].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");document.getElementById("ctxNote").textContent=`当前 context 已包含 metric_code=${m.code}${p?`, product_code=${p.code}`:""}${c?`, customer_name=${c}`:""}`;let headline=c?`已进入客户「${c}」的 ${m.name} 贡献分析` : p?`已筛选产品「${p.name}」下的 ${m.name} 贡献`:`已按 OIC 维度分析 ${m.name}`;let body=STATE.action==="drivers"?`建议从产品贡献、客户 Top20、近 30 天波动三个角度解释 ${m.name} 变化，数值和排名由接口返回，模型只负责文字归纳。`:STATE.action==="report"?`可以将当前上下文、趋势、产品 Rank、客户 Top20 组装为 analysis_pack，并传给生成报告模块生成 OIC 摘要。`:STATE.action==="filter"?`助手可反向写入筛选条件，例如限定产品、客户类型、行业或币种，然后触发看板刷新。`:m.tone;document.getElementById("analysis").innerHTML=`<h3>${headline}</h3><ul><li>当前 ${m.name} 为 <b>${m.value}${m.unit}</b>，较上月 ${m.m}，增幅 ${m.mp}。</li><li>${body}</li><li>第二行展示 30 天趋势、按月走势和产品 Rank；第三行展示客户 Top20 贡献。</li></ul>`;const chips=[["drivers","分析变动原因","拆解产品、客户和时间贡献"],["rank","查看产品 Rank","按当前指标展示产品贡献"],["top","查看 Top20 客户","定位核心客户增减来源"],["report","生成 OIC 摘要","生成可放入经营报告的文字"]];document.getElementById("chips").innerHTML=chips.map(x=>`<button class="chip" data-action="${x[0]}"><b>${x[1]}</b>${x[2]}</button>`).join("");document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>selectAction(b.dataset.action))}
-function render(){renderKPIs();renderCharts();renderRank();renderCustomers();renderChat()}
-function selectMetric(k){STATE.metric=k;STATE.product=null;STATE.customer=null;STATE.action="overview";render();flash("contextCard");setLog(`点击 KPI：${DATA[k].name}，已刷新趋势、产品 Rank、客户 Top20 和右侧上下文。`)}
-function selectProduct(code){const m=metric(),r=m.products.find(x=>x[0]===code);STATE.product={code:r[0],name:r[1]};STATE.customer=null;STATE.action="product";render();flash("customerPanel");flash("contextCard");setLog(`点击产品：${r[1]}，客户 Top20 已按该产品上下文刷新。`)}
-function selectCustomer(name){STATE.customer=name;STATE.action="customer";render();flash("contextCard");setLog(`点击客户：${name}，右侧助手已切换到客户贡献上下文。`)}
-function selectAction(action){STATE.action=action;renderChat();flash("analysis");setLog(`点击推荐分析：${{drivers:"分析变动原因",rank:"查看产品 Rank",top:"查看 Top20 客户",report:"生成 OIC 摘要"}[action]}。`);if(action==="rank")flash("rankPanel");if(action==="top")flash("customerPanel")}
-document.getElementById("sendBtn").onclick=()=>{const v=document.getElementById("askInput").value.trim();if(!v)return;STATE.action=v.includes("报告")?"report":v.includes("客户")?"top":v.includes("产品")?"rank":"drivers";renderChat();flash("analysis");setLog(`自然语言追问：${v}`);document.getElementById("askInput").value=""}
-document.getElementById("askInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("sendBtn").click()})
-document.getElementById("filterBtn").onclick=()=>selectAction("filter")
-document.getElementById("reportBtn").onclick=()=>selectAction("report")
-document.getElementById("attachBtn").onclick=()=>{setLog("已模拟附加当前明细表：产品 Rank + 客户 Top20。");flash("customerPanel")}
-render();
-</script>
+
+  <script>
+    const DATA = {
+      deposit: {
+        code:"DEP_BAL", name:"存款", value:56.90, unit:"亿港元",
+        d:+0.19, dp:"+0.35%", m:+2.74, mp:"+5.07%", y:+7.16, yp:"+14.41%",
+        trend:"存款 30 天趋势", month:"存款按月趋势", rank:"存款产品贡献 Rank", customer:"客户按存款贡献 Top20",
+        products:[
+          ["MA_N112_1","定期存款 - 非 CMB 分润",27.60,1.12,"+6.1%"],
+          ["MA_N1111_1","活期存款 - 非员工",10.80,0.82,"+8.3%"],
+          ["MA_N111_2","储蓄存款",7.40,0.31,"+4.6%"],
+          ["MA_N12_1","发行存款证",5.80,-0.16,"-2.7%"],
+          ["MA_N112_2","定期存款 - CMB 分润",3.90,0.24,"+3.2%"],
+          ["MA_N1111_2","活期存款 - 员工",1.40,0.06,"+2.1%"]
+        ],
+        customers:["ABC International Holdings Ltd.","Global Trade Partners Ltd.","Sunrise Group Co., Ltd.","Evergreen Infrastructure Ltd.","Asia Pacific Logistics Co.","North Bay Trading Ltd."],
+        insight:"存款较上月增加，主要由定期存款及活期非员工账户拉动。后续应关注大额定期续作和低息资金留存。",
+        alerts:["定期存款贡献占比较高，需要关注到期续作。","低息存款同步改善，负债结构有优化迹象。","Top3 客户贡献集中度处于可观察区间。"]
+      },
+      loan: {
+        code:"LOAN_BAL", name:"贷款", value:59.92, unit:"亿港元",
+        d:-0.14, dp:"-0.23%", m:+0.11, mp:"+0.18%", y:+2.60, yp:"+4.80%",
+        trend:"贷款 30 天趋势", month:"贷款按月趋势", rank:"贷款产品贡献 Rank", customer:"客户按贷款贡献 Top20",
+        products:[
+          ["MA_M111_1","房产按揭贷款",20.40,-0.06,"-0.3%"],
+          ["MA_M111_8","贸易融资",9.80,0.32,"+3.4%"],
+          ["MA_M111_7","银团贷款",7.60,-0.18,"-2.3%"],
+          ["MA_M111_3","个人贷款",6.10,0.09,"+1.5%"],
+          ["MA_M111_4","税务贷款",4.20,0.16,"+4.1%"],
+          ["MA_M111_9","支票贴现",3.80,-0.05,"-1.2%"],
+          ["MA_M111_6","定期循环贷款",2.90,0.11,"+3.8%"]
+        ],
+        customers:["Harbour Property Finance Ltd.","Pearl River Manufacturing Ltd.","Pacific Trade Finance Ltd.","Golden Bridge Holdings Ltd.","Apex Import Export Ltd.","Unity Retail Group Ltd."],
+        insight:"贷款较昨日回落，银团贷款和房产按揭贷款形成拖累；贸易融资和税务贷款仍保持正贡献。",
+        alerts:["房产按揭贷款短期回落，需结合还款和提款计划解释。","贸易融资保持增长，可下钻客户确认持续性。","银团贷款波动较大，建议在报告中单列说明。"]
+      },
+      lowcost: {
+        code:"LOW_COST_DEP", name:"低息存款", value:18.17, unit:"亿港元",
+        d:+0.13, dp:"+0.70%", m:+1.26, mp:"+7.41%", y:+2.27, yp:"+14.28%",
+        trend:"低息存款 30 天趋势", month:"低息存款按月趋势", rank:"低息存款产品贡献 Rank", customer:"客户按低息存款贡献 Top20",
+        products:[
+          ["MA_N1111_1","活期存款 - 非员工",10.50,0.72,"+7.4%"],
+          ["MA_N111_2","储蓄存款",6.30,0.38,"+6.2%"],
+          ["MA_N1111_2","活期存款 - 员工",1.37,0.05,"+3.0%"]
+        ],
+        customers:["Bright Future Holdings Ltd.","Blue Ocean Trading Ltd.","Metro Services Co., Ltd.","Fortune Technology Ltd.","Kingdom Retail Ltd.","Loyal Capital Ltd."],
+        insight:"低息存款延续增长，是负债结构改善的重要来源。活期非员工账户贡献最明显。",
+        alerts:["低息资金增长较快，需观察是否为短期过账资金。","活期非员工账户贡献突出，可形成客户留存清单。","低息占比改善时，报告应同步说明存款成本影响。"]
+      },
+      fee: {
+        code:"NON_INTEREST_INCOME", name:"非息收入", value:1.28, unit:"亿港元",
+        d:+0.01, dp:"+5.79%", m:+0.18, mp:"+16.38%", y:+0.53, yp:"+70.67%",
+        trend:"非息收入 30 天趋势", month:"非息收入按月趋势", rank:"非息收入来源 Rank", customer:"客户按非息收入贡献 Top20",
+        products:[
+          ["MA_A12_1","收费及佣金收入",0.62,0.07,"+12.5%"],
+          ["MA_A13_1","交易业务净收入",0.28,0.04,"+16.0%"],
+          ["MA_A13_0","财资业务净收入",0.19,0.03,"+14.1%"],
+          ["MA_A13_2","FVPL 金融资产及负债净收益",0.13,0.02,"+11.8%"],
+          ["MA_A12_2","收费及佣金支出抵减",0.06,-0.01,"-3.2%"]
+        ],
+        customers:["Summit Securities Ltd.","Central Wealth Ltd.","Oriental Asset Mgmt Ltd.","Prime Insurance Brokers Ltd.","Union Global Markets Ltd.","Navigator Advisory Ltd."],
+        insight:"非息收入月内增长较快，主要来自收费及佣金收入和交易业务净收入。需要区分一次性收入与可持续收入。",
+        alerts:["非息收入增幅较高，建议标注一次性因素。","交易业务净收入波动较强，不宜直接外推。","收费及佣金收入可进一步拆为客户和产品贡献。"]
+      }
+    };
+
+    const state = { metric:"deposit", product:null, customer:null, action:"overview", scope:"oic" };
+    const metricOrder = ["deposit","loan","lowcost","fee"];
+    const metric = () => DATA[state.metric];
+    const money = v => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
+    const cls = value => String(value).startsWith("-") || value < 0 ? "neg" : "pos";
+    const byId = id => document.getElementById(id);
+
+    function flash(id){
+      const el = byId(id);
+      el.classList.remove("flash");
+      void el.offsetWidth;
+      el.classList.add("flash");
+    }
+    function log(msg){
+      byId("eventLog").textContent = `${new Date().toLocaleTimeString()} · ${msg}`;
+    }
+
+    function renderKpis(){
+      byId("kpiArea").innerHTML = metricOrder.map(key => {
+        const m = DATA[key];
+        const active = key === state.metric ? " active" : "";
+        return `<button class="kpi${active}" data-metric="${key}">
+          <div class="kpi-name">${m.name}</div>
+          <div class="kpi-value">${m.value.toFixed(2)}<span class="kpi-unit">${m.unit}</span></div>
+          <div class="kpi-grid">
+            <span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
+            <span>较上月</span><b>${money(m.m)}</b><b class="${cls(m.mp)}">${m.mp}</b>
+            <span>较年初</span><b>${money(m.y)}</b><b class="${cls(m.yp)}">${m.yp}</b>
+          </div>
+        </button>`;
+      }).join("");
+      document.querySelectorAll(".kpi").forEach(btn => btn.onclick = () => selectMetric(btn.dataset.metric));
+    }
+
+    function series(){
+      const k = state.metric;
+      const base = {deposit:55.1, loan:60.4, lowcost:16.9, fee:1.05}[k];
+      const drift = {deposit:.038, loan:-.004, lowcost:.032, fee:.009}[k];
+      return Array.from({length:30},(_,i)=> base + Math.sin(i/3.8)*.24 + i*drift + (i%9===0 ? .07 : 0));
+    }
+
+    function renderLine(){
+      const vals = series();
+      const min = Math.min(...vals)-.18, max = Math.max(...vals)+.18;
+      const w=420,h=210,p=30;
+      const pts = vals.map((v,i)=>[p+i*(w-2*p)/29,h-p-(v-min)/(max-min)*(h-2*p)]);
+      const path = pts.map((p,i)=>(i ? "L" : "M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+      byId("lineChart").innerHTML = `
+        <defs><linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c20f1f" stop-opacity=".16"/><stop offset="1" stop-color="#c20f1f" stop-opacity="0"/></linearGradient></defs>
+        ${[0,1,2,3].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/3}" y2="${p+i*(h-2*p)/3}" stroke="#e5ebf3"/>`).join("")}
+        <path d="${path} L ${w-p},${h-p} L ${p},${h-p} Z" fill="url(#lineFill)"/>
+        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="3"/>
+        ${pts.filter((_,i)=>i%5===0 || i===29).map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#c20f1f" stroke-width="2"/>`).join("")}
+        <text x="${p}" y="${h-7}" font-size="12" fill="#64748b">04-06</text>
+        <text x="${w/2-18}" y="${h-7}" font-size="12" fill="#64748b">04-21</text>
+        <text x="${w-p-35}" y="${h-7}" font-size="12" fill="#64748b">05-05</text>`;
+    }
+
+    function renderBars(){
+      const k = state.metric;
+      const w=420,h=210,p=32;
+      const base = [4.2,4.8,5.2,5.0,5.6,6.0,5.3,5.5,5.9,6.1,6.35,6.55];
+      const scale = {deposit:9.2, loan:9.4, lowcost:2.9, fee:.23}[k];
+      const vals = base.map((v,i)=>v*scale + (i%4===0 ? scale*.16 : 0));
+      const max = Math.max(...vals)*1.16;
+      const bars = vals.map((v,i)=>{
+        const x = p+i*30;
+        const y = h-p-v/max*(h-2*p);
+        return `<rect x="${x}" y="${y}" width="19" height="${h-p-y}" rx="2" fill="#087f8c"/><text x="${x+5}" y="${h-8}" font-size="11" fill="#64748b">${i+1}</text>`;
+      }).join("");
+      const pts = vals.map((_,i)=>[p+9+i*30,h-p-(Math.sin(i/1.9)+1.35)/2.75*(h-2*p)]);
+      const path = pts.map((p,i)=>(i ? "L" : "M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+      byId("barChart").innerHTML = `
+        ${[0,1,2].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/2}" y2="${p+i*(h-2*p)/2}" stroke="#e5ebf3"/>`).join("")}
+        ${bars}
+        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="2.5"/>
+        ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff" stroke="#c20f1f" stroke-width="2"/>`).join("")}
+        <text x="298" y="22" font-size="12" fill="#c20f1f">环比速度</text>`;
+    }
+
+    function renderRank(){
+      const m = metric();
+      byId("rankMeta").textContent = state.scope === "oic" ? "按产品层级排序，可筛选客户" : "按同层级单位排序，可对比贡献";
+      byId("rankTable").innerHTML = `<tr><th>Rank</th><th>产品/来源</th><th>余额/收入</th><th>较上月</th><th>增幅</th></tr>` +
+        m.products.map((r,i)=>{
+          const selected = state.product && state.product.code === r[0] ? " selected" : "";
+          return `<tr data-row="product" data-code="${r[0]}" class="${selected}">
+            <td>${i+1}</td><td>${r[1]}</td><td>${r[2].toFixed(2)}</td>
+            <td class="bar-wrap"><span class="bar-bg ${r[3]<0?"down":""}" style="width:${Math.min(Math.abs(r[3])*42,96)}px"></span><span class="bar-text ${cls(r[3])}">${money(r[3])}</span></td>
+            <td class="${cls(r[4])}">${r[4]}</td>
+          </tr>`;
+        }).join("");
+      document.querySelectorAll('tr[data-row="product"]').forEach(row => row.onclick = () => selectProduct(row.dataset.code));
+    }
+
+    function renderCustomers(){
+      const m = metric();
+      const productName = state.product ? ` · ${state.product.name}` : "";
+      byId("customerTitle").textContent = `${m.customer}${productName}`;
+      byId("customerMeta").textContent = "金额单位与当前指标一致，Demo 展示前 6 名";
+      byId("customerTable").innerHTML = `<tr><th>Rank</th><th>客户名称</th><th>类型</th><th>行业</th><th>${m.name}</th><th>较上月</th><th>占比</th></tr>` +
+        m.customers.map((c,i)=>{
+          const selected = state.customer === c ? " selected" : "";
+          const val = state.metric === "fee" ? .16-i*.018 : 7.08-i*.58;
+          const chg = .57-i*.05;
+          return `<tr data-row="customer" data-customer="${c}" class="${selected}">
+            <td>${i+1}</td><td>${c}</td><td>${i<4?"Corporate":"SME"}</td>
+            <td>${["Manufacturing","Trading","Real Estate","Logistics","Financial Services","Retail"][i]}</td>
+            <td>${val.toFixed(2)}</td><td class="${cls(chg)}">${money(chg)}</td><td>${(1.39-i*.13).toFixed(2)}%</td>
+          </tr>`;
+        }).join("");
+      document.querySelectorAll('tr[data-row="customer"]').forEach(row => row.onclick = () => selectCustomer(row.dataset.customer));
+    }
+
+    function renderAlerts(){
+      byId("alerts").innerHTML = metric().alerts.map((a,i)=>`<div class="alert"><b>${["口径提示","经营异动","下钻建议"][i]}</b>${a}</div>`).join("");
+    }
+
+    function contextObject(){
+      const m = metric();
+      return {
+        module:"OIC_DASHBOARD",
+        date:byId("dateInput").value,
+        scope:state.scope.toUpperCase(),
+        oic_id:byId("oicInput").value,
+        metric_code:m.code,
+        metric_name:m.name,
+        selected_visual:state.customer ? "customer_topn" : state.product ? "product_rank" : "kpi_card",
+        product_code:state.product ? state.product.code : null,
+        product_name:state.product ? state.product.name : null,
+        customer_name:state.customer,
+        currency:byId("currencySelect").value
+      };
+    }
+
+    function renderAssistant(){
+      const m = metric();
+      const ctx = contextObject();
+      byId("ctxGrid").innerHTML = [
+        ["指标",ctx.metric_name],
+        ["范围",`${ctx.scope} / ${ctx.oic_id}`],
+        ["日期",ctx.date],
+        ["产品",ctx.product_name || "全部产品"],
+        ["客户",ctx.customer_name || "未选中"],
+        ["币种",ctx.currency]
+      ].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
+      byId("ctxCode").textContent = `metric_code=${ctx.metric_code}${ctx.product_code ? ", product_code="+ctx.product_code : ""}${ctx.customer_name ? ", customer="+ctx.customer_name : ""}`;
+      let title = ctx.customer_name ? `客户贡献分析：${ctx.customer_name}` : ctx.product_name ? `产品贡献分析：${ctx.product_name}` : `${m.name}总览分析`;
+      let second = state.action === "report"
+        ? "当前 analysis_pack 可传入生成报告模块，形成经营亮点、经营关注和证据口径。"
+        : state.action === "filter"
+        ? "助手已生成 filter_request，正式环境中由前端更新上下文并重新调用指标服务。"
+        : state.action === "rank"
+        ? "产品 Rank 展示当前指标的主要拉动和拖累来源，可进一步点击产品定位客户贡献。"
+        : state.action === "top"
+        ? "客户 TopN 用于识别核心贡献客户和集中度，客户级数据应记录访问审计。"
+        : m.insight;
+      byId("analysisBox").innerHTML = `<h3>${title}</h3>
+        <p>当前${m.name}为 <b>${m.value.toFixed(2)}${m.unit}</b>，较上月 <b>${money(m.m)}</b>，增幅 <b class="${cls(m.mp)}">${m.mp}</b>。</p>
+        <p>${second}</p>
+        <p>建议先看产品贡献，再看客户 TopN；如需正式材料，可直接生成 OIC 摘要。</p>`;
+      const actions = [
+        ["drivers","分析变动原因","产品、客户、时间三维归因"],
+        ["rank","查看产品 Rank","定位拉动和拖累项"],
+        ["top","查看 Top20 客户","识别核心贡献客户"],
+        ["report","生成 OIC 摘要","输出可复用报告段落"]
+      ];
+      byId("actionGrid").innerHTML = actions.map(a=>`<button class="action-card" data-action="${a[0]}"><b>${a[1]}</b>${a[2]}</button>`).join("");
+      document.querySelectorAll(".action-card").forEach(btn => btn.onclick = () => selectAction(btn.dataset.action));
+    }
+
+    function render(){
+      const m = metric();
+      byId("trendTitle").textContent = m.trend;
+      byId("monthTitle").textContent = m.month;
+      byId("rankTitle").textContent = m.rank;
+      renderKpis();
+      renderLine();
+      renderBars();
+      renderRank();
+      renderCustomers();
+      renderAlerts();
+      renderAssistant();
+    }
+
+    function selectMetric(key){
+      state.metric = key;
+      state.product = null;
+      state.customer = null;
+      state.action = "overview";
+      render();
+      flash("contextCard");
+      log(`切换指标：${DATA[key].name}。`);
+    }
+    function selectProduct(code){
+      const r = metric().products.find(x => x[0] === code);
+      state.product = {code:r[0], name:r[1]};
+      state.customer = null;
+      state.action = "product";
+      render();
+      flash("customerPanel");
+      flash("contextCard");
+      log(`筛选产品：${r[1]}。`);
+    }
+    function selectCustomer(name){
+      state.customer = name;
+      state.action = "customer";
+      render();
+      flash("contextCard");
+      log(`进入客户上下文：${name}。`);
+    }
+    function selectAction(action){
+      state.action = action;
+      renderAssistant();
+      if(action === "rank") flash("rankPanel");
+      if(action === "top") flash("customerPanel");
+      if(action === "report" || action === "filter") flash("analysisBox");
+      log(`执行动作：${action}。`);
+    }
+
+    document.querySelectorAll(".seg").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".seg").forEach(x=>x.classList.remove("active"));
+        btn.classList.add("active");
+        state.scope = btn.dataset.scope;
+        byId("pageTitle").textContent = state.scope === "oic" ? "OIC 经营驾驶舱" : state.scope === "team" ? "团队经营驾驶舱" : "部门经营驾驶舱";
+        renderAssistant();
+        log(`切换范围：${btn.textContent}。`);
+      };
+    });
+    byId("viewSelect").onchange = e => {
+      byId("pageTitle").textContent = e.target.value === "OIC" ? "OIC 经营驾驶舱" : "MO 管理层驾驶舱";
+      renderAssistant();
+    };
+    ["dateInput","oicInput","currencySelect"].forEach(id => byId(id).onchange = () => renderAssistant());
+    byId("sendBtn").onclick = () => {
+      const text = byId("askInput").value.trim();
+      if(!text) return;
+      state.action = text.includes("报告") ? "report" : text.includes("客户") ? "top" : text.includes("产品") || text.includes("贸易融资") ? "rank" : "drivers";
+      if(text.includes("贸易融资") && state.metric === "loan"){
+        selectProduct("MA_M111_8");
+      }else{
+        renderAssistant();
+        flash("analysisBox");
+      }
+      log(`自然语言追问：${text}`);
+      byId("askInput").value = "";
+    };
+    byId("askInput").addEventListener("keydown", e => { if(e.key === "Enter") byId("sendBtn").click(); });
+    byId("filterBtn").onclick = () => selectAction("filter");
+    byId("reportBtn").onclick = () => selectAction("report");
+    byId("detailBtn").onclick = () => { flash("customerPanel"); log("已附加产品 Rank 和客户 TopN 明细。"); };
+
+    render();
+  </script>
 </body>
 </html>
