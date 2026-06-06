@@ -48,12 +48,12 @@
     .brand{
       display:flex;
       align-items:center;
-      width:232px;
+      width:430px;
       white-space:nowrap;
     }
     .brand-logo{
-      width:178px;
-      height:42px;
+      width:410px;
+      height:48px;
       object-fit:contain;
       display:block;
     }
@@ -249,8 +249,8 @@
       background:linear-gradient(90deg,#c20f1f,#e0434d);
     }
     .icon-btn{
-      width:30px;
-      height:30px;
+      width:32px;
+      height:32px;
       border:1px solid var(--line);
       border-radius:7px;
       background:#fff;
@@ -260,6 +260,42 @@
       place-items:center;
     }
     .icon-btn:hover{border-color:#b8c3d3;background:#f8fafc}
+    .expand-btn{
+      color:#334155;
+      background:#f8fafc;
+      border-color:#dbe3ef;
+    }
+    .expand-btn:hover{
+      color:#fff;
+      border-color:#c20f1f;
+      background:linear-gradient(135deg,#c20f1f,#e0434d);
+    }
+    .variance{
+      position:relative;
+      height:18px;
+      border-radius:999px;
+      overflow:hidden;
+      padding:0 6px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      min-width:58px;
+      background:#f1f5f9;
+      isolation:isolate;
+    }
+    .variance::before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:calc(var(--p, 20) * 1%);
+      max-width:100%;
+      border-radius:999px;
+      opacity:.22;
+      background:var(--green);
+      z-index:-1;
+    }
+    .variance.neg::before{background:var(--red)}
+    .variance span{position:relative}
     svg{display:block;width:100%;height:210px}
     .legend-text{font-size:12px;fill:#334155;font-weight:800}
     table{
@@ -295,16 +331,24 @@
     }
     .bar-bg{
       position:absolute;
-      left:8px;
-      top:9px;
-      height:13px;
-      border-radius:3px;
+      left:0;
+      top:0;
+      bottom:0;
+      height:auto;
+      border-radius:0 999px 999px 0;
       background:var(--teal);
-      opacity:.16;
-      min-width:8px;
+      opacity:.14;
+      min-width:20px;
     }
     .bar-bg.down{background:var(--red)}
-    .bar-text{position:relative;font-weight:900}
+    .bar-text{
+      position:relative;
+      font-weight:900;
+      display:inline-flex;
+      min-height:100%;
+      align-items:center;
+      padding-left:6px;
+    }
     .resizer{
       width:8px;
       background:linear-gradient(90deg,#eef2f7 0,#fff 50%,#eef2f7 100%);
@@ -355,12 +399,12 @@
     }
     .context{
       border:1px solid #f0c2c7;
-      background:linear-gradient(180deg,#fffafa,#fff);
+      background:#fff;
       border-radius:8px;
-      padding:13px;
+      padding:0;
       margin-bottom:12px;
       position:relative;
-      box-shadow:inset 3px 0 0 var(--red);
+      overflow:hidden;
     }
     .context::before{
       content:"";
@@ -376,14 +420,15 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      color:var(--red-dark);
+      color:#fff;
+      background:linear-gradient(90deg,#9f0d18,#c20f1f);
       font-weight:900;
-      margin-bottom:11px;
+      padding:11px 12px;
     }
     .sync-pill{
-      color:var(--teal);
-      background:var(--teal-soft);
-      border:1px solid #b5e0e3;
+      color:#fff;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.35);
       border-radius:999px;
       padding:2px 8px;
       font-size:11px;
@@ -392,12 +437,13 @@
     .ctx-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:9px;
+      gap:8px;
       font-size:13px;
+      padding:12px;
     }
     .ctx-grid div{
       border:1px solid #edf1f6;
-      background:#fff;
+      background:#fbfcfe;
       border-radius:7px;
       padding:8px;
       min-width:0;
@@ -415,10 +461,14 @@
       white-space:nowrap;
     }
     .ctx-note{
-      margin-top:9px;
+      margin:0 12px 12px;
       color:#8f0d18;
       font-size:12px;
       line-height:1.4;
+      background:#fff7f8;
+      border:1px solid #f2d4d8;
+      border-radius:7px;
+      padding:8px;
     }
     .analysis{
       border:1px solid var(--line);
@@ -433,42 +483,32 @@
       margin:0 0 8px;
       font-size:15px;
     }
-    .module-list{
+    .module-copy{
       display:grid;
       gap:8px;
-      margin-top:8px;
     }
-    .module-row{
-      display:grid;
-      grid-template-columns:76px 1fr;
-      gap:10px;
-      align-items:start;
-    }
-    .module-row b{color:var(--red-dark)}
+    .module-copy b{color:var(--red-dark)}
     .question-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:9px;
+      display:flex;
+      gap:8px;
       margin-bottom:13px;
+      flex-wrap:wrap;
     }
     .question-card{
-      min-height:72px;
       text-align:left;
-      border:1px solid var(--line);
-      background:#fff;
-      border-radius:8px;
-      padding:11px;
+      border:1px solid #d8dee8;
+      background:#f3f5f8;
+      border-radius:999px;
+      padding:7px 12px;
       color:#334155;
+      max-width:100%;
+      white-space:normal;
+      line-height:1.35;
     }
     .question-card:hover{
-      background:var(--teal-soft);
-      border-color:#9dd2d7;
-    }
-    .question-card b{
-      display:block;
+      background:#e8edf4;
+      border-color:#c5cfdd;
       color:#111827;
-      margin-bottom:5px;
-      font-size:13px;
     }
     .assistant-buttons{
       display:flex;
@@ -517,14 +557,7 @@
       padding:0 12px;
       font-weight:800;
     }
-    .event-log{
-      margin-top:12px;
-      border-top:1px dashed var(--line);
-      padding-top:10px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.55;
-    }
+    .event-log{display:none}
     .flash{animation:flash .55s ease}
     @keyframes flash{
       0%{box-shadow:0 0 0 0 rgba(194,15,31,.28)}
@@ -532,8 +565,8 @@
     }
     @media(max-width:1480px){
       .shell{grid-template-columns:minmax(720px,1fr) 8px var(--assistant-width,410px)}
-      .brand{width:210px}
-      .brand-logo{width:166px}
+      .brand{width:430px}
+      .brand-logo{width:410px}
       .dashboard-grid{grid-template-columns:1fr 1fr}
       .dashboard-grid .panel:nth-child(3){grid-column:1 / 3}
       .kpi-value{font-size:28px}
@@ -574,14 +607,14 @@
             <div class="panel-head">
               <div>
                 <h2 id="trendTitle"></h2>
-                <div class="meta" id="trendMeta">最近 30 天，单位：百万港元</div>
+                <div class="meta" id="trendMeta">最近 30 天，单位：亿港元</div>
               </div>
               <div class="toolbar">
                 <div class="range-toggle" aria-label="趋势周期">
                   <button class="range-btn" data-window="7">7天</button>
                   <button class="range-btn active" data-window="30">30天</button>
                 </div>
-                <button class="icon-btn expand-btn" data-expand="trendPanel" title="放大/缩小">⤢</button>
+                <button class="icon-btn expand-btn" data-expand="trendPanel" title="放大/缩小">⛶</button>
               </div>
             </div>
             <svg id="lineChart" viewBox="0 0 420 210" role="img" aria-label="趋势图"></svg>
@@ -594,7 +627,7 @@
                 <div class="meta">月度余额/收入与环比速度</div>
               </div>
               <div class="toolbar">
-                <button class="icon-btn expand-btn" data-expand="monthPanel" title="放大/缩小">⤢</button>
+                <button class="icon-btn expand-btn" data-expand="monthPanel" title="放大/缩小">⛶</button>
               </div>
             </div>
             <svg id="barChart" viewBox="0 0 420 210" role="img" aria-label="月度柱线图"></svg>
@@ -606,7 +639,7 @@
                 <h2 id="rankTitle"></h2>
                 <div class="meta" id="rankMeta"></div>
               </div>
-              <div class="toolbar"><button class="icon-btn expand-btn" data-expand="rankPanel" title="放大/缩小">⤢</button></div>
+              <div class="toolbar"><button class="icon-btn expand-btn" data-expand="rankPanel" title="放大/缩小">⛶</button></div>
             </div>
             <table id="rankTable"></table>
           </article>
@@ -618,7 +651,7 @@
               <h2 id="customerTitle"></h2>
               <div class="meta" id="customerMeta"></div>
             </div>
-            <div class="toolbar"><button class="icon-btn expand-btn" data-expand="customerPanel" title="放大/缩小">⤢</button></div>
+            <div class="toolbar"><button class="icon-btn expand-btn" data-expand="customerPanel" title="放大/缩小">⛶</button></div>
           </div>
           <table id="customerTable"></table>
         </article>
@@ -628,10 +661,10 @@
 
       <aside class="assistant">
         <div class="assistant-head">
-          <span>AI 分析助手</span>
+          <span>MAVA AI智能财会助手</span>
           <div class="assistant-actions">
             <button class="icon-btn" id="resetCtxBtn" title="清空上下文">↻</button>
-            <button class="icon-btn" id="assistantExpandBtn" title="放大/缩小助手">⤢</button>
+            <button class="icon-btn" id="assistantExpandBtn" title="放大/缩小助手">⛶</button>
           </div>
         </div>
         <div class="assistant-body">
@@ -740,6 +773,8 @@
     const metric = () => DATA[state.metric];
     const money = v => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
     const cls = value => String(value).startsWith("-") || value < 0 ? "neg" : "pos";
+    const pctMagnitude = value => Math.min(100, Math.max(12, Math.abs(parseFloat(String(value).replace("%",""))) * 6));
+    const chartUnit = m => m.value < 0.01 ? "万港元" : "亿港元";
     const byId = id => document.getElementById(id);
     const isPnl = m => m.kind === "pnl";
     const mainCompareLabel = m => isPnl(m) ? "较同期" : "较上月";
@@ -754,7 +789,8 @@
       el.classList.add("flash");
     }
     function log(msg){
-      byId("eventLog").textContent = `${new Date().toLocaleTimeString()} · ${msg}`;
+      const el = byId("eventLog");
+      if(el) el.textContent = "";
     }
     function dashboardInteraction(){
       if(!state.moduleLocked) state.activeModule = "query";
@@ -776,11 +812,11 @@
         const m = DATA[key];
         const active = key === state.metric ? " active" : "";
         const compareRows = isPnl(m)
-          ? `<span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
-            <span>较同期</span><b>${money(m.same)}</b><b class="${cls(m.samep)}">${m.samep}</b>`
-          : `<span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
-            <span>较上月</span><b>${money(m.m)}</b><b class="${cls(m.mp)}">${m.mp}</b>
-            <span>较年初</span><b>${money(m.y)}</b><b class="${cls(m.yp)}">${m.yp}</b>`;
+          ? `<span>较昨日</span><b>${money(m.d)}</b><b class="variance ${cls(m.dp)}" style="--p:${pctMagnitude(m.dp)}"><span>${m.dp}</span></b>
+            <span>较同期</span><b>${money(m.same)}</b><b class="variance ${cls(m.samep)}" style="--p:${pctMagnitude(m.samep)}"><span>${m.samep}</span></b>`
+          : `<span>较昨日</span><b>${money(m.d)}</b><b class="variance ${cls(m.dp)}" style="--p:${pctMagnitude(m.dp)}"><span>${m.dp}</span></b>
+            <span>较上月</span><b>${money(m.m)}</b><b class="variance ${cls(m.mp)}" style="--p:${pctMagnitude(m.mp)}"><span>${m.mp}</span></b>
+            <span>较年初</span><b>${money(m.y)}</b><b class="variance ${cls(m.yp)}" style="--p:${pctMagnitude(m.yp)}"><span>${m.yp}</span></b>`;
         return `<button class="kpi${active}" data-metric="${key}">
           <div class="kpi-name">${m.name}</div>
           <div class="kpi-value">${m.value.toFixed(2)}<span class="kpi-unit">${m.unit}</span></div>
@@ -843,23 +879,31 @@
 
     function renderBars(){
       const k = state.metric;
-      const w=420,h=210,p=34;
+      const w=420,h=210,p=38;
       const base = [4.2,4.8,5.2,5.0,5.6,6.0,5.3,5.5,5.9,6.1,6.35,6.55];
       const scale = {deposit:9.2, loan:9.4, nii:.18, fee:.23}[k];
       const vals = base.map((v,i)=>v*scale + (i%4===0 ? scale*.16 : 0));
       const max = Math.max(...vals)*1.18;
+      const monthEnds = ["06/30","07/31","08/31","09/30","10/31","11/30","12/31","01/31","02/28","03/31","04/30","05/31"];
+      const step = (w - p * 2) / 11;
       const bars = vals.map((v,i)=>{
-        const x = p+i*29.5;
+        const cx = p + i * step;
+        const x = cx - 8;
         const y = h-p-v/max*(h-2*p);
-        return `<rect x="${x}" y="${y}" width="18" height="${h-p-y}" rx="3" fill="#087f8c"/>
-          <text x="${x+5}" y="${h-8}" font-size="10" fill="#64748b">${i+1}</text>`;
+        return `<rect x="${x}" y="${y}" width="16" height="${h-p-y}" rx="4" fill="url(#barGrad)"/>
+          <line x1="${cx}" x2="${cx}" y1="${h-p}" y2="${h-p+4}" stroke="#94a3b8"/>
+          <text x="${cx}" y="${h-9}" text-anchor="middle" font-size="8.5" fill="#64748b">${monthEnds[i]}</text>`;
       }).join("");
       const growth = vals.map((_,i)=> (Math.sin(i/1.9)+1.35)/2.75);
-      const pts = growth.map((v,i)=>[p+9+i*29.5,h-p-v*(h-2*p)]);
+      const pts = growth.map((v,i)=>[p+i*step,h-p-v*(h-2*p)]);
       const path = smoothPath(pts);
       byId("barChart").innerHTML = `
+        <defs>
+          <linearGradient id="barGrad" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#0aa0ad"/><stop offset="1" stop-color="#087f8c"/></linearGradient>
+        </defs>
         ${[0,1,2].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/2}" y2="${p+i*(h-2*p)/2}" stroke="#e5ebf3"/>`).join("")}
-        <circle cx="${p}" cy="17" r="4" fill="#087f8c"/><text x="${p+10}" y="21" class="legend-text">月度金额</text>
+        <line x1="${p}" x2="${w-p}" y1="${h-p}" y2="${h-p}" stroke="#cbd5e1"/>
+        <circle cx="${p}" cy="17" r="4" fill="#087f8c"/><text x="${p+10}" y="21" class="legend-text">月末金额</text>
         <line x1="124" x2="148" y1="17" y2="17" stroke="#c20f1f" stroke-width="2.5"/><circle cx="136" cy="17" r="3" fill="#fff" stroke="#c20f1f" stroke-width="2"/><text x="154" y="21" class="legend-text">环比增幅</text>
         ${bars}
         <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="2.6"/>
@@ -878,7 +922,7 @@
           const selected = state.product && state.product.code === r[0] ? " selected" : "";
           return `<tr data-row="product" data-code="${r[0]}" class="${selected}">
             <td>${i+1}</td><td>${r[1]}</td><td>${r[2].toFixed(2)}</td>
-            <td class="bar-wrap"><span class="bar-bg ${r[3]<0?"down":""}" style="width:${Math.min(Math.abs(r[3])*42,96)}px"></span><span class="bar-text ${cls(r[3])}">${money(r[3])}</span></td>
+            <td class="bar-wrap"><span class="bar-bg ${r[3]<0?"down":""}" style="width:${Math.min(Math.abs(r[3])*620,100)}%"></span><span class="bar-text ${cls(r[3])}">${money(r[3])}</span></td>
             <td class="${cls(r[4])}">${r[4]}</td>
           </tr>`;
         }).join("") +
@@ -929,30 +973,59 @@
       const m = metric();
       const ctx = contextObject();
       byId("ctxGrid").innerHTML = [
-        ["指标",ctx.metric_name],
+        ["一级指标",ctx.metric_name],
         ["日期",ctx.date],
-        ["产品",ctx.product_name],
+        ["二级指标",ctx.product_name],
         ["访问编号",ctx.ee],
         ["客户",ctx.customer_name]
       ].map(x=>`<div><span>${x[0]}</span><b title="${x[1]}">${x[1]}</b></div>`).join("");
       byId("ctxNote").textContent = `已按 ${ctx.scope} 范围同步看板选择，金额均为港币等值。`;
-      byId("analysisBox").innerHTML = `<h3>三类能力入口</h3>
-        <div class="module-list">
-          <div class="module-row"><b>查询数据</b><span>输入时间、指标、机构、客户或产品条件，获取相关业绩数据、趋势、排名和贡献拆解。</span></div>
-          <div class="module-row"><b>生成报告</b><span>复用当前看板的指标、产品、客户和图表上下文，形成经营摘要、归因结论和汇报材料。</span></div>
-          <div class="module-row"><b>知识问答</b><span>解释指标口径、产品定义、系统操作和经营分析逻辑，辅助用户理解看板结果。</span></div>
+      const moduleCopy = {
+        query:{
+          title:"查询数据",
+          body:`围绕当前一级指标、二级指标、日期和客户上下文查询业绩表现，支持继续输入时间、机构、客户或产品条件，返回趋势、排名、贡献拆解和异常变动原因。`,
+          points:["适合：追问为什么变化、看某个产品/客户、补充时间范围。","输出：数据口径、核心结论、可联动看板筛选条件。"]
+        },
+        report:{
+          title:"生成报告",
+          body:`复用当前看板上下文和已选对象，生成经营摘要、归因结论和汇报段落，可按 OIC、团队或部门视角组织内容。`,
+          points:["适合：生成日报/月报/OIC 摘要、整理汇报材料。","输出：标题、关键数据、变动归因、行动建议。"]
+        },
+        knowledge:{
+          title:"知识问答",
+          body:`解释指标口径、产品定义、系统操作和经营分析逻辑，帮助用户理解看板数据背后的规则与来源。`,
+          points:["适合：问口径、问取数范围、问系统字段含义。","输出：定义说明、适用范围、注意事项。"]
+        }
+      }[state.activeModule];
+      byId("analysisBox").innerHTML = `<h3>${moduleCopy.title}</h3>
+        <div class="module-copy">
+          <p>${moduleCopy.body}</p>
+          ${moduleCopy.points.map(p=>`<p><b>${p.split("：")[0]}：</b>${p.split("：").slice(1).join("：")}</p>`).join("")}
         </div>`;
-      const questions = [
-        [`为什么${m.name}发生变化？`,`按产品、客户和时间拆解${m.name}变动原因。`],
-        [`查看${ctx.product_name === "全部产品" ? "主要产品" : ctx.product_name}贡献明细`,`把当前产品贡献与客户 TopN 联动起来。`],
-        [`生成${ctx.scope}经营摘要`,`基于当前看板生成可复制报告段落。`],
-        [`${m.name}的指标口径是什么？`,`说明口径、取数范围和常见分析注意点。`]
-      ];
-      byId("questionGrid").innerHTML = questions.map(q=>`<button class="question-card" data-question="${q[0]}"><b>${q[0]}</b>${q[1]}</button>`).join("");
+      const questionSets = {
+        query:[
+          `为什么${m.name}发生变化？`,
+          `查看${ctx.product_name === "全部产品" ? "主要产品" : ctx.product_name}贡献明细`,
+          `按客户拆解${m.name}`,
+          `只看最近7天趋势`
+        ],
+        report:[
+          `生成${ctx.scope}经营摘要`,
+          `生成${m.name}变动说明`,
+          `输出可复制汇报段落`
+        ],
+        knowledge:[
+          `${m.name}的指标口径是什么？`,
+          `${ctx.product_name}如何取数？`,
+          `这个看板的金额单位规则是什么？`
+        ]
+      };
+      byId("questionGrid").innerHTML = questionSets[state.activeModule].map(q=>`<button class="question-card" type="button" data-question="${q}">${q}</button>`).join("");
       document.querySelectorAll(".question-card").forEach(btn => btn.onclick = () => {
-        byId("askInput").value = btn.dataset.question;
-        byId("askInput").focus();
-        log(`推荐问题已填入问答框：${btn.dataset.question}`);
+        const input = byId("askInput");
+        input.value = btn.dataset.question;
+        input.focus();
+        input.scrollIntoView({block:"nearest"});
       });
       renderModuleButtons();
     }
@@ -960,7 +1033,7 @@
     function render(){
       const m = metric();
       byId("trendTitle").textContent = m.trend.replace("30", state.trendWindow);
-      byId("trendMeta").textContent = `最近 ${state.trendWindow} 天，单位：百万港元`;
+      byId("trendMeta").textContent = `最近 ${state.trendWindow} 天，单位：${chartUnit(m)}`;
       byId("monthTitle").textContent = m.month;
       byId("rankTitle").textContent = m.rank;
       renderKpis();
