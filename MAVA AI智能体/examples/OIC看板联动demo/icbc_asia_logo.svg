@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="64" viewBox="0 0 260 64" role="img" aria-label="ICBC ASIA">
+  <rect width="260" height="64" fill="none"/>
+  <g transform="translate(3 7)">
+    <circle cx="25" cy="25" r="23" fill="#fff" stroke="#c20f1f" stroke-width="4"/>
+    <path d="M8 18h34M8 32h34M19 8v34M31 8v34" stroke="#c20f1f" stroke-width="4" stroke-linecap="round"/>
+    <rect x="14" y="15" width="22" height="20" fill="#fff"/>
+    <path d="M16 18h18M16 32h18M25 12v26" stroke="#172033" stroke-width="3.6" stroke-linecap="round"/>
+  </g>
+  <text x="62" y="39" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800" fill="#172033" letter-spacing="0">ICBC ASIA</text>
+</svg>

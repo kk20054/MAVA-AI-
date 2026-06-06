@@ -31,10 +31,11 @@
     button,input,select{font:inherit}
     button{cursor:pointer}
     .app{
-      min-height:100vh;
+      height:100vh;
       min-width:1180px;
       display:grid;
       grid-template-rows:64px 1fr;
+      overflow:hidden;
     }
     .topbar{
       display:flex;
@@ -47,22 +48,14 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:12px;
       width:232px;
-      font-weight:900;
-      font-size:25px;
       white-space:nowrap;
     }
-    .brand-mark{
-      width:36px;
-      height:36px;
-      border:3px solid var(--red);
-      color:var(--red);
-      border-radius:50%;
-      display:grid;
-      place-items:center;
-      font-weight:900;
-      font-size:18px;
+    .brand-logo{
+      width:178px;
+      height:42px;
+      object-fit:contain;
+      display:block;
     }
     .title{
       padding-left:18px;
@@ -88,30 +81,9 @@
     }
     .shell{
       min-height:0;
+      height:calc(100vh - 64px);
       display:grid;
-      grid-template-columns:68px minmax(780px,1fr) 440px;
-    }
-    .rail{
-      border-right:1px solid var(--line);
-      background:#fff;
-      padding:14px 9px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .nav-btn{
-      height:44px;
-      width:50px;
-      border:0;
-      border-radius:8px;
-      background:#fff;
-      color:#5b6b84;
-      font-weight:800;
-    }
-    .nav-btn.active{
-      background:var(--red-soft);
-      color:var(--red);
-      border-left:3px solid var(--red);
+      grid-template-columns:minmax(760px,1fr) 8px var(--assistant-width,440px);
     }
     .workspace{
       overflow:auto;
@@ -124,28 +96,26 @@
       gap:18px;
       margin-bottom:12px;
     }
+    .title-row{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
     .page-head h1{
       margin:0;
       font-size:22px;
       line-height:1.25;
     }
-    .tabs{
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    .seg{
-      height:32px;
+    .scope-select{
+      min-width:116px;
+      height:34px;
+      border-radius:7px;
       border:1px solid var(--line);
       background:#fff;
-      color:#475569;
-      border-radius:7px;
-      padding:0 12px;
-    }
-    .seg.active{
-      background:#172033;
-      color:#fff;
-      border-color:#172033;
+      color:#334155;
+      padding:0 10px;
+      font-weight:800;
     }
     .health{
       display:flex;
@@ -154,6 +124,7 @@
       color:var(--muted);
       font-size:12px;
       white-space:nowrap;
+      margin-top:3px;
     }
     .health::before{
       content:"";
@@ -222,6 +193,16 @@
       min-height:292px;
       padding:14px;
     }
+    .panel.expanded-panel{
+      grid-column:1 / -1;
+      min-height:420px;
+    }
+    .panel.expanded-panel svg{height:318px}
+    .customer-section{
+      min-height:290px;
+      margin-bottom:14px;
+    }
+    .customer-section.expanded-panel{min-height:430px}
     .panel-head{
       display:flex;
       justify-content:space-between;
@@ -243,6 +224,29 @@
     .toolbar{
       display:flex;
       gap:6px;
+      align-items:center;
+    }
+    .range-toggle{
+      display:flex;
+      gap:0;
+      border-radius:7px;
+      overflow:hidden;
+      border:1px solid #efb8be;
+      background:#fff;
+    }
+    .range-btn{
+      height:30px;
+      border:0;
+      background:#fff;
+      color:var(--red-dark);
+      min-width:44px;
+      padding:0 9px;
+      font-weight:900;
+    }
+    .range-btn + .range-btn{border-left:1px solid #efb8be}
+    .range-btn.active{
+      color:#fff;
+      background:linear-gradient(90deg,#c20f1f,#e0434d);
     }
     .icon-btn{
       width:30px;
@@ -252,8 +256,12 @@
       background:#fff;
       color:#475569;
       font-weight:900;
+      display:inline-grid;
+      place-items:center;
     }
+    .icon-btn:hover{border-color:#b8c3d3;background:#f8fafc}
     svg{display:block;width:100%;height:210px}
+    .legend-text{font-size:12px;fill:#334155;font-weight:800}
     table{
       width:100%;
       border-collapse:collapse;
@@ -276,6 +284,11 @@
     tr[data-row]{cursor:pointer}
     tr[data-row]:hover td{background:#fff8f8}
     tr.selected td{background:var(--red-soft)!important}
+    tr.total-row td{
+      background:#f8fafc;
+      border-top:1px solid var(--line);
+      font-weight:900;
+    }
     .bar-wrap{
       position:relative;
       min-width:78px;
@@ -292,34 +305,31 @@
     }
     .bar-bg.down{background:var(--red)}
     .bar-text{position:relative;font-weight:900}
-    .customer-section{
-      min-height:290px;
-      margin-bottom:14px;
+    .resizer{
+      width:8px;
+      background:linear-gradient(90deg,#eef2f7 0,#fff 50%,#eef2f7 100%);
+      border-left:1px solid var(--line);
+      border-right:1px solid var(--line);
+      cursor:col-resize;
+      position:relative;
     }
-    .split-row{
-      display:grid;
-      grid-template-columns:1.2fr .8fr;
-      gap:12px;
+    .resizer::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:3px;
+      height:42px;
+      border-radius:3px;
+      transform:translate(-50%,-50%);
+      background:#b8c3d3;
     }
-    .alerts{
-      display:grid;
-      gap:9px;
-    }
-    .alert{
-      border:1px solid #e6d7b9;
-      background:#fffaf0;
-      border-radius:7px;
-      padding:11px 12px;
-      font-size:12px;
-      line-height:1.45;
-    }
-    .alert b{display:block;color:#7c4a03;margin-bottom:3px}
+    .resizer.dragging::after{background:var(--red)}
     .assistant{
       min-width:0;
-      border-left:1px solid var(--line);
       background:#fff;
       display:grid;
-      grid-template-rows:58px 1fr;
+      grid-template-rows:58px minmax(0,1fr) auto;
     }
     .assistant-head{
       border-bottom:1px solid var(--line);
@@ -338,13 +348,19 @@
       overflow:auto;
       padding:15px;
     }
+    .assistant-footer{
+      border-top:1px solid var(--line);
+      background:#fff;
+      padding:10px 15px 12px;
+    }
     .context{
-      border:1px solid #efb8be;
-      background:#fffafa;
+      border:1px solid #f0c2c7;
+      background:linear-gradient(180deg,#fffafa,#fff);
       border-radius:8px;
       padding:13px;
       margin-bottom:12px;
       position:relative;
+      box-shadow:inset 3px 0 0 var(--red);
     }
     .context::before{
       content:"";
@@ -356,28 +372,53 @@
       background:var(--red);
     }
     .context-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
       color:var(--red-dark);
       font-weight:900;
-      margin-bottom:10px;
+      margin-bottom:11px;
+    }
+    .sync-pill{
+      color:var(--teal);
+      background:var(--teal-soft);
+      border:1px solid #b5e0e3;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      font-weight:900;
     }
     .ctx-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:9px 12px;
+      gap:9px;
       font-size:13px;
+    }
+    .ctx-grid div{
+      border:1px solid #edf1f6;
+      background:#fff;
+      border-radius:7px;
+      padding:8px;
+      min-width:0;
     }
     .ctx-grid span{
       display:block;
       color:var(--muted);
       font-size:11px;
-      margin-bottom:3px;
+      margin-bottom:4px;
     }
-    .ctx-code{
-      margin-top:10px;
+    .ctx-grid b{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .ctx-note{
+      margin-top:9px;
       color:#8f0d18;
       font-size:12px;
       line-height:1.4;
-      word-break:break-word;
     }
     .analysis{
       border:1px solid var(--line);
@@ -392,14 +433,25 @@
       margin:0 0 8px;
       font-size:15px;
     }
-    .analysis p{margin:7px 0}
-    .action-grid{
+    .module-list{
+      display:grid;
+      gap:8px;
+      margin-top:8px;
+    }
+    .module-row{
+      display:grid;
+      grid-template-columns:76px 1fr;
+      gap:10px;
+      align-items:start;
+    }
+    .module-row b{color:var(--red-dark)}
+    .question-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:9px;
       margin-bottom:13px;
     }
-    .action-card{
+    .question-card{
       min-height:72px;
       text-align:left;
       border:1px solid var(--line);
@@ -408,20 +460,40 @@
       padding:11px;
       color:#334155;
     }
-    .action-card:hover{
+    .question-card:hover{
       background:var(--teal-soft);
       border-color:#9dd2d7;
     }
-    .action-card b{
+    .question-card b{
       display:block;
       color:#111827;
       margin-bottom:5px;
       font-size:13px;
     }
+    .assistant-buttons{
+      display:flex;
+      gap:8px;
+      margin-bottom:9px;
+      flex-wrap:wrap;
+    }
+    .secondary{
+      height:34px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#334155;
+      border-radius:7px;
+      padding:0 11px;
+    }
+    .secondary.primary{
+      border-color:#9dd2d7;
+      background:var(--teal-soft);
+      color:var(--teal);
+      font-weight:900;
+    }
     .ask{
       border:1px solid var(--line);
       border-radius:8px;
-      height:44px;
+      min-height:44px;
       display:flex;
       align-items:center;
       padding:0 8px;
@@ -445,26 +517,6 @@
       padding:0 12px;
       font-weight:800;
     }
-    .assistant-buttons{
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
-    .secondary{
-      height:34px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:#334155;
-      border-radius:7px;
-      padding:0 11px;
-    }
-    .secondary.primary{
-      border-color:#9dd2d7;
-      background:var(--teal-soft);
-      color:var(--teal);
-      font-weight:900;
-    }
     .event-log{
       margin-top:12px;
       border-top:1px dashed var(--line);
@@ -479,80 +531,73 @@
       100%{box-shadow:0 0 0 12px rgba(194,15,31,0)}
     }
     @media(max-width:1480px){
-      .shell{grid-template-columns:62px minmax(720px,1fr) 410px}
-      .brand{width:210px;font-size:22px}
+      .shell{grid-template-columns:minmax(720px,1fr) 8px var(--assistant-width,410px)}
+      .brand{width:210px}
+      .brand-logo{width:166px}
       .dashboard-grid{grid-template-columns:1fr 1fr}
       .dashboard-grid .panel:nth-child(3){grid-column:1 / 3}
       .kpi-value{font-size:28px}
-      .top-actions .control:nth-child(3){display:none}
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-mark">工</div><span>ICBC ASIA</span></div>
+      <div class="brand"><img class="brand-logo" src="icbc_asia_logo.svg" alt="ICBC Asia" /></div>
       <div class="title">MAVA AI 智能财会助手 · 经营看板</div>
       <div class="top-actions">
-        <select class="control" id="viewSelect" aria-label="视角">
-          <option value="OIC">OIC 视角</option>
-          <option value="MO">MO 视角</option>
-        </select>
         <input class="control" id="dateInput" value="2026-05-05" aria-label="数据日期" />
-        <input class="control" id="oicInput" value="EE001408023" aria-label="OIC 编号" />
-        <select class="control" id="currencySelect" aria-label="币种">
-          <option>港元</option>
-          <option>人民币折算</option>
-          <option>美元折算</option>
-        </select>
+        <input class="control" id="oicInput" value="EE001408023" aria-label="访问编号 EE" />
       </div>
     </header>
 
     <div class="shell">
-      <nav class="rail" aria-label="主导航">
-        <button class="nav-btn">数</button>
-        <button class="nav-btn active">板</button>
-        <button class="nav-btn">报</button>
-        <button class="nav-btn">知</button>
-        <button class="nav-btn">设</button>
-      </nav>
-
       <main class="workspace">
         <section class="page-head">
           <div>
-            <h1 id="pageTitle">OIC 经营驾驶舱</h1>
-            <div class="health">数据更新时间 2026-05-05 11:30，MAVA 管会口径</div>
-          </div>
-          <div class="tabs" aria-label="看板范围">
-            <button class="seg active" data-scope="oic">OIC</button>
-            <button class="seg" data-scope="team">团队</button>
-            <button class="seg" data-scope="dept">部门</button>
+            <div class="title-row">
+              <h1 id="pageTitle">OIC 经营看板</h1>
+              <select class="scope-select" id="scopeSelect" aria-label="看板范围">
+                <option value="oic">OIC</option>
+                <option value="team">团队</option>
+                <option value="dept">部门</option>
+              </select>
+            </div>
+            <div class="health">数据更新时间 2026-05-05 11:30</div>
           </div>
         </section>
 
         <section class="kpis" id="kpiArea"></section>
 
         <section class="dashboard-grid">
-          <article class="panel">
+          <article class="panel chart-panel" id="trendPanel">
             <div class="panel-head">
               <div>
                 <h2 id="trendTitle"></h2>
-                <div class="meta">最近 30 天，单位：百万港元</div>
+                <div class="meta" id="trendMeta">最近 30 天，单位：百万港元</div>
               </div>
-              <div class="toolbar"><button class="icon-btn">+</button><button class="icon-btn">...</button></div>
+              <div class="toolbar">
+                <div class="range-toggle" aria-label="趋势周期">
+                  <button class="range-btn" data-window="7">7天</button>
+                  <button class="range-btn active" data-window="30">30天</button>
+                </div>
+                <button class="icon-btn expand-btn" data-expand="trendPanel" title="放大/缩小">⤢</button>
+              </div>
             </div>
-            <svg id="lineChart" viewBox="0 0 420 210" role="img"></svg>
+            <svg id="lineChart" viewBox="0 0 420 210" role="img" aria-label="趋势图"></svg>
           </article>
 
-          <article class="panel">
+          <article class="panel chart-panel" id="monthPanel">
             <div class="panel-head">
               <div>
                 <h2 id="monthTitle"></h2>
                 <div class="meta">月度余额/收入与环比速度</div>
               </div>
-              <div class="toolbar"><button class="icon-btn">+</button><button class="icon-btn">...</button></div>
+              <div class="toolbar">
+                <button class="icon-btn expand-btn" data-expand="monthPanel" title="放大/缩小">⤢</button>
+              </div>
             </div>
-            <svg id="barChart" viewBox="0 0 420 210" role="img"></svg>
+            <svg id="barChart" viewBox="0 0 420 210" role="img" aria-label="月度柱线图"></svg>
           </article>
 
           <article class="panel" id="rankPanel">
@@ -561,60 +606,58 @@
                 <h2 id="rankTitle"></h2>
                 <div class="meta" id="rankMeta"></div>
               </div>
-              <div class="toolbar"><button class="icon-btn">R</button></div>
+              <div class="toolbar"><button class="icon-btn expand-btn" data-expand="rankPanel" title="放大/缩小">⤢</button></div>
             </div>
             <table id="rankTable"></table>
           </article>
         </section>
 
-        <section class="split-row">
-          <article class="panel customer-section" id="customerPanel">
-            <div class="panel-head">
-              <div>
-                <h2 id="customerTitle"></h2>
-                <div class="meta" id="customerMeta"></div>
-              </div>
-              <div class="toolbar"><button class="icon-btn">C</button></div>
+        <article class="panel customer-section" id="customerPanel">
+          <div class="panel-head">
+            <div>
+              <h2 id="customerTitle"></h2>
+              <div class="meta" id="customerMeta"></div>
             </div>
-            <table id="customerTable"></table>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>经营关注</h2>
-                <div class="meta">规则引擎 + analysis_pack 生成</div>
-              </div>
-            </div>
-            <div class="alerts" id="alerts"></div>
-          </article>
-        </section>
+            <div class="toolbar"><button class="icon-btn expand-btn" data-expand="customerPanel" title="放大/缩小">⤢</button></div>
+          </div>
+          <table id="customerTable"></table>
+        </article>
       </main>
+
+      <div class="resizer" id="assistantResizer" title="拖动调整问答框宽度"></div>
 
       <aside class="assistant">
         <div class="assistant-head">
           <span>AI 分析助手</span>
-          <div class="assistant-actions"><button class="icon-btn">↻</button><button class="icon-btn">□</button></div>
+          <div class="assistant-actions">
+            <button class="icon-btn" id="resetCtxBtn" title="清空上下文">↻</button>
+            <button class="icon-btn" id="assistantExpandBtn" title="放大/缩小助手">⤢</button>
+          </div>
         </div>
         <div class="assistant-body">
           <section class="context" id="contextCard">
-            <div class="context-title">当前上下文</div>
+            <div class="context-title">
+              <span>看板联动对象</span>
+              <span class="sync-pill">已同步点击</span>
+            </div>
             <div class="ctx-grid" id="ctxGrid"></div>
-            <div class="ctx-code" id="ctxCode"></div>
+            <div class="ctx-note" id="ctxNote"></div>
           </section>
           <section class="analysis" id="analysisBox"></section>
-          <div class="meta" style="font-weight:900;color:#334155;margin:0 0 9px">推荐动作</div>
-          <section class="action-grid" id="actionGrid"></section>
+          <div class="meta" style="font-weight:900;color:#334155;margin:0 0 9px">推荐问题</div>
+          <section class="question-grid" id="questionGrid"></section>
+          <div class="event-log" id="eventLog">等待交互。</div>
+        </div>
+        <div class="assistant-footer">
+          <div class="assistant-buttons" id="moduleButtons">
+            <button class="secondary primary" data-module="query">查询数据</button>
+            <button class="secondary" data-module="report">生成报告</button>
+            <button class="secondary" data-module="knowledge">知识问答</button>
+          </div>
           <div class="ask">
-            <input id="askInput" placeholder="输入追问，例如：为什么变化、只看贸易融资、生成报告" />
+            <input id="askInput" placeholder="输入问题，例如：为什么变化、只看贸易融资、生成报告" />
             <button class="send" id="sendBtn">发送</button>
           </div>
-          <div class="assistant-buttons">
-            <button class="secondary primary" id="filterBtn">筛选看板</button>
-            <button class="secondary" id="reportBtn">生成报告</button>
-            <button class="secondary" id="detailBtn">附加明细</button>
-          </div>
-          <div class="event-log" id="eventLog">等待交互。</div>
         </div>
       </aside>
     </div>
@@ -623,9 +666,9 @@
   <script>
     const DATA = {
       deposit: {
-        code:"DEP_BAL", name:"存款", value:56.90, unit:"亿港元",
+        code:"DEP_BAL", name:"存款", kind:"balance", value:56.90, unit:"亿港元",
         d:+0.19, dp:"+0.35%", m:+2.74, mp:"+5.07%", y:+7.16, yp:"+14.41%",
-        trend:"存款 30 天趋势", month:"存款按月趋势", rank:"存款产品贡献 Rank", customer:"客户按存款贡献 Top20",
+        trend:"存款 30 天趋势", month:"存款按月趋势", rank:"存款产品贡献", customer:"客户按存款贡献 Top20",
         products:[
           ["MA_N112_1","定期存款 - 非 CMB 分润",27.60,1.12,"+6.1%"],
           ["MA_N1111_1","活期存款 - 非员工",10.80,0.82,"+8.3%"],
@@ -635,13 +678,12 @@
           ["MA_N1111_2","活期存款 - 员工",1.40,0.06,"+2.1%"]
         ],
         customers:["ABC International Holdings Ltd.","Global Trade Partners Ltd.","Sunrise Group Co., Ltd.","Evergreen Infrastructure Ltd.","Asia Pacific Logistics Co.","North Bay Trading Ltd."],
-        insight:"存款较上月增加，主要由定期存款及活期非员工账户拉动。后续应关注大额定期续作和低息资金留存。",
-        alerts:["定期存款贡献占比较高，需要关注到期续作。","低息存款同步改善，负债结构有优化迹象。","Top3 客户贡献集中度处于可观察区间。"]
+        insight:"存款较上月增加，主要由定期存款及活期非员工账户拉动。后续应关注大额定期续作和活期资金留存。"
       },
       loan: {
-        code:"LOAN_BAL", name:"贷款", value:59.92, unit:"亿港元",
+        code:"LOAN_BAL", name:"贷款", kind:"balance", value:59.92, unit:"亿港元",
         d:-0.14, dp:"-0.23%", m:+0.11, mp:"+0.18%", y:+2.60, yp:"+4.80%",
-        trend:"贷款 30 天趋势", month:"贷款按月趋势", rank:"贷款产品贡献 Rank", customer:"客户按贷款贡献 Top20",
+        trend:"贷款 30 天趋势", month:"贷款按月趋势", rank:"贷款产品贡献", customer:"客户按贷款贡献 Top20",
         products:[
           ["MA_M111_1","房产按揭贷款",20.40,-0.06,"-0.3%"],
           ["MA_M111_8","贸易融资",9.80,0.32,"+3.4%"],
@@ -652,26 +694,26 @@
           ["MA_M111_6","定期循环贷款",2.90,0.11,"+3.8%"]
         ],
         customers:["Harbour Property Finance Ltd.","Pearl River Manufacturing Ltd.","Pacific Trade Finance Ltd.","Golden Bridge Holdings Ltd.","Apex Import Export Ltd.","Unity Retail Group Ltd."],
-        insight:"贷款较昨日回落，银团贷款和房产按揭贷款形成拖累；贸易融资和税务贷款仍保持正贡献。",
-        alerts:["房产按揭贷款短期回落，需结合还款和提款计划解释。","贸易融资保持增长，可下钻客户确认持续性。","银团贷款波动较大，建议在报告中单列说明。"]
+        insight:"贷款较昨日回落，银团贷款和房产按揭形成拖累；贸易融资和税务贷款仍保持正贡献。"
       },
-      lowcost: {
-        code:"LOW_COST_DEP", name:"低息存款", value:18.17, unit:"亿港元",
-        d:+0.13, dp:"+0.70%", m:+1.26, mp:"+7.41%", y:+2.27, yp:"+14.28%",
-        trend:"低息存款 30 天趋势", month:"低息存款按月趋势", rank:"低息存款产品贡献 Rank", customer:"客户按低息存款贡献 Top20",
+      nii: {
+        code:"NET_INTEREST_INCOME", name:"利息净收入", kind:"pnl", value:0.96, unit:"亿港元",
+        d:+0.02, dp:"+2.14%", same:+0.11, samep:"+12.94%",
+        trend:"利息净收入 30 天趋势", month:"利息净收入按月趋势", rank:"利息净收入分产品贡献", customer:"客户按利息净收入贡献 Top20",
         products:[
-          ["MA_N1111_1","活期存款 - 非员工",10.50,0.72,"+7.4%"],
-          ["MA_N111_2","储蓄存款",6.30,0.38,"+6.2%"],
-          ["MA_N1111_2","活期存款 - 员工",1.37,0.05,"+3.0%"]
+          ["NII_DEP_SPREAD","存款利差贡献",0.38,0.05,"+15.2%"],
+          ["NII_LOAN_SPREAD","贷款利差贡献",0.31,0.03,"+10.7%"],
+          ["NII_FTP_ADJ","FTP 调整项",0.15,0.02,"+8.4%"],
+          ["NII_BOND_BOOK","债券组合利息",0.08,0.01,"+6.3%"],
+          ["NII_OTHER","其他利息净收入",0.04,-0.01,"-3.1%"]
         ],
         customers:["Bright Future Holdings Ltd.","Blue Ocean Trading Ltd.","Metro Services Co., Ltd.","Fortune Technology Ltd.","Kingdom Retail Ltd.","Loyal Capital Ltd."],
-        insight:"低息存款延续增长，是负债结构改善的重要来源。活期非员工账户贡献最明显。",
-        alerts:["低息资金增长较快，需观察是否为短期过账资金。","活期非员工账户贡献突出，可形成客户留存清单。","低息占比改善时，报告应同步说明存款成本影响。"]
+        insight:"利息净收入较同期改善，主要来自贷款利差贡献和存款资金成本优化。建议进一步拆分 FTP 调整项与真实经营贡献。"
       },
       fee: {
-        code:"NON_INTEREST_INCOME", name:"非息收入", value:1.28, unit:"亿港元",
-        d:+0.01, dp:"+5.79%", m:+0.18, mp:"+16.38%", y:+0.53, yp:"+70.67%",
-        trend:"非息收入 30 天趋势", month:"非息收入按月趋势", rank:"非息收入来源 Rank", customer:"客户按非息收入贡献 Top20",
+        code:"FEE_NET_INCOME", name:"中间业务净收入", kind:"pnl", value:1.28, unit:"亿港元",
+        d:+0.01, dp:"+5.79%", same:+0.18, samep:"+16.38%",
+        trend:"中间业务净收入 30 天趋势", month:"中间业务净收入按月趋势", rank:"中间业务收入分产品贡献", customer:"客户按中间业务净收入贡献 Top20",
         products:[
           ["MA_A12_1","收费及佣金收入",0.62,0.07,"+12.5%"],
           ["MA_A13_1","交易业务净收入",0.28,0.04,"+16.0%"],
@@ -680,17 +722,30 @@
           ["MA_A12_2","收费及佣金支出抵减",0.06,-0.01,"-3.2%"]
         ],
         customers:["Summit Securities Ltd.","Central Wealth Ltd.","Oriental Asset Mgmt Ltd.","Prime Insurance Brokers Ltd.","Union Global Markets Ltd.","Navigator Advisory Ltd."],
-        insight:"非息收入月内增长较快，主要来自收费及佣金收入和交易业务净收入。需要区分一次性收入与可持续收入。",
-        alerts:["非息收入增幅较高，建议标注一次性因素。","交易业务净收入波动较强，不宜直接外推。","收费及佣金收入可进一步拆为客户和产品贡献。"]
+        insight:"中间业务净收入较同期增长，主要来自收费及佣金收入和交易业务净收入。需要区分一次性收入与可持续收入。"
       }
     };
 
-    const state = { metric:"deposit", product:null, customer:null, action:"overview", scope:"oic" };
-    const metricOrder = ["deposit","loan","lowcost","fee"];
+    const state = {
+      metric:"fee",
+      product:null,
+      customer:null,
+      action:"overview",
+      scope:"oic",
+      trendWindow:30,
+      activeModule:"query",
+      moduleLocked:false
+    };
+    const metricOrder = ["deposit","loan","nii","fee"];
     const metric = () => DATA[state.metric];
     const money = v => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
     const cls = value => String(value).startsWith("-") || value < 0 ? "neg" : "pos";
     const byId = id => document.getElementById(id);
+    const isPnl = m => m.kind === "pnl";
+    const mainCompareLabel = m => isPnl(m) ? "较同期" : "较上月";
+    const mainCompareValue = m => isPnl(m) ? m.same : m.m;
+    const mainComparePct = m => isPnl(m) ? m.samep : m.mp;
+    const customerIds = ["900138205","900182746","900294631","900305817","900417263","900528904"];
 
     function flash(id){
       const el = byId(id);
@@ -701,19 +756,35 @@
     function log(msg){
       byId("eventLog").textContent = `${new Date().toLocaleTimeString()} · ${msg}`;
     }
+    function dashboardInteraction(){
+      if(!state.moduleLocked) state.activeModule = "query";
+    }
+    function switchModule(module, locked=true){
+      state.activeModule = module;
+      state.moduleLocked = locked && module !== "query";
+      renderModuleButtons();
+      renderAssistant();
+    }
+    function renderModuleButtons(){
+      document.querySelectorAll("#moduleButtons .secondary").forEach(btn => {
+        btn.classList.toggle("primary", btn.dataset.module === state.activeModule);
+      });
+    }
 
     function renderKpis(){
       byId("kpiArea").innerHTML = metricOrder.map(key => {
         const m = DATA[key];
         const active = key === state.metric ? " active" : "";
+        const compareRows = isPnl(m)
+          ? `<span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
+            <span>较同期</span><b>${money(m.same)}</b><b class="${cls(m.samep)}">${m.samep}</b>`
+          : `<span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
+            <span>较上月</span><b>${money(m.m)}</b><b class="${cls(m.mp)}">${m.mp}</b>
+            <span>较年初</span><b>${money(m.y)}</b><b class="${cls(m.yp)}">${m.yp}</b>`;
         return `<button class="kpi${active}" data-metric="${key}">
           <div class="kpi-name">${m.name}</div>
           <div class="kpi-value">${m.value.toFixed(2)}<span class="kpi-unit">${m.unit}</span></div>
-          <div class="kpi-grid">
-            <span>较昨日</span><b>${money(m.d)}</b><b class="${cls(m.dp)}">${m.dp}</b>
-            <span>较上月</span><b>${money(m.m)}</b><b class="${cls(m.mp)}">${m.mp}</b>
-            <span>较年初</span><b>${money(m.y)}</b><b class="${cls(m.yp)}">${m.yp}</b>
-          </div>
+          <div class="kpi-grid">${compareRows}</div>
         </button>`;
       }).join("");
       document.querySelectorAll(".kpi").forEach(btn => btn.onclick = () => selectMetric(btn.dataset.metric));
@@ -721,54 +792,88 @@
 
     function series(){
       const k = state.metric;
-      const base = {deposit:55.1, loan:60.4, lowcost:16.9, fee:1.05}[k];
-      const drift = {deposit:.038, loan:-.004, lowcost:.032, fee:.009}[k];
-      return Array.from({length:30},(_,i)=> base + Math.sin(i/3.8)*.24 + i*drift + (i%9===0 ? .07 : 0));
+      const base = {deposit:55.1, loan:60.4, nii:.82, fee:1.05}[k];
+      const drift = {deposit:.038, loan:-.004, nii:.006, fee:.009}[k];
+      const full = Array.from({length:30},(_,i)=> base + Math.sin(i/3.8)*.24 + i*drift + (i%9===0 ? .07 : 0));
+      return state.trendWindow === 7 ? full.slice(-7) : full;
+    }
+
+    function smoothPath(points){
+      if(points.length < 2) return "";
+      let d = `M${points[0][0].toFixed(1)},${points[0][1].toFixed(1)}`;
+      for(let i=1;i<points.length;i++){
+        const [x0,y0] = points[i-1], [x1,y1] = points[i];
+        const cx = (x0 + x1) / 2;
+        d += ` C${cx.toFixed(1)},${y0.toFixed(1)} ${cx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+      }
+      return d;
     }
 
     function renderLine(){
       const vals = series();
       const min = Math.min(...vals)-.18, max = Math.max(...vals)+.18;
-      const w=420,h=210,p=30;
-      const pts = vals.map((v,i)=>[p+i*(w-2*p)/29,h-p-(v-min)/(max-min)*(h-2*p)]);
-      const path = pts.map((p,i)=>(i ? "L" : "M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+      const w=420,h=210,p=34;
+      const pts = vals.map((v,i)=>[p+i*(w-2*p)/(vals.length-1),h-p-(v-min)/(max-min)*(h-2*p)]);
+      const path = smoothPath(pts);
+      const area = `${path} L ${pts[pts.length-1][0].toFixed(1)},${h-p} L ${p},${h-p} Z`;
+      const maxIdx = vals.indexOf(Math.max(...vals));
+      const minIdx = vals.indexOf(Math.min(...vals));
+      const latest = pts[pts.length-1];
+      const firstLabel = state.trendWindow === 7 ? "04-29" : "04-06";
       byId("lineChart").innerHTML = `
-        <defs><linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c20f1f" stop-opacity=".16"/><stop offset="1" stop-color="#c20f1f" stop-opacity="0"/></linearGradient></defs>
+        <defs>
+          <linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#c20f1f" stop-opacity=".18"/><stop offset="1" stop-color="#c20f1f" stop-opacity="0"/></linearGradient>
+          <filter id="softShadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#c20f1f" flood-opacity=".14"/></filter>
+        </defs>
         ${[0,1,2,3].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/3}" y2="${p+i*(h-2*p)/3}" stroke="#e5ebf3"/>`).join("")}
-        <path d="${path} L ${w-p},${h-p} L ${p},${h-p} Z" fill="url(#lineFill)"/>
-        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="3"/>
-        ${pts.filter((_,i)=>i%5===0 || i===29).map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#fff" stroke="#c20f1f" stroke-width="2"/>`).join("")}
-        <text x="${p}" y="${h-7}" font-size="12" fill="#64748b">04-06</text>
-        <text x="${w/2-18}" y="${h-7}" font-size="12" fill="#64748b">04-21</text>
+        <text x="${p}" y="18" font-size="11" fill="#64748b">金额趋势</text>
+        <path d="${area}" fill="url(#lineFill)"/>
+        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="3" filter="url(#softShadow)"/>
+        ${pts.map((pt,i)=> i%5===0 || i===pts.length-1 ? `<circle cx="${pt[0]}" cy="${pt[1]}" r="3.8" fill="#fff" stroke="#c20f1f" stroke-width="2"/>` : "").join("")}
+        <g>
+          <circle cx="${latest[0]}" cy="${latest[1]}" r="5" fill="#fff" stroke="#c20f1f" stroke-width="2.4"/>
+          <text x="${latest[0]-24}" y="${latest[1]-12}" font-size="11" fill="#c20f1f" font-weight="900">最新 ${vals[vals.length-1].toFixed(2)}</text>
+        </g>
+        <text x="${pts[maxIdx][0]-14}" y="${pts[maxIdx][1]-10}" font-size="10" fill="#057a55">高点</text>
+        <text x="${pts[minIdx][0]-14}" y="${pts[minIdx][1]+18}" font-size="10" fill="#64748b">低点</text>
+        <text x="${p}" y="${h-7}" font-size="12" fill="#64748b">${firstLabel}</text>
+        <text x="${w/2-18}" y="${h-7}" font-size="12" fill="#64748b">${state.trendWindow === 7 ? "05-02" : "04-21"}</text>
         <text x="${w-p-35}" y="${h-7}" font-size="12" fill="#64748b">05-05</text>`;
     }
 
     function renderBars(){
       const k = state.metric;
-      const w=420,h=210,p=32;
+      const w=420,h=210,p=34;
       const base = [4.2,4.8,5.2,5.0,5.6,6.0,5.3,5.5,5.9,6.1,6.35,6.55];
-      const scale = {deposit:9.2, loan:9.4, lowcost:2.9, fee:.23}[k];
+      const scale = {deposit:9.2, loan:9.4, nii:.18, fee:.23}[k];
       const vals = base.map((v,i)=>v*scale + (i%4===0 ? scale*.16 : 0));
-      const max = Math.max(...vals)*1.16;
+      const max = Math.max(...vals)*1.18;
       const bars = vals.map((v,i)=>{
-        const x = p+i*30;
+        const x = p+i*29.5;
         const y = h-p-v/max*(h-2*p);
-        return `<rect x="${x}" y="${y}" width="19" height="${h-p-y}" rx="2" fill="#087f8c"/><text x="${x+5}" y="${h-8}" font-size="11" fill="#64748b">${i+1}</text>`;
+        return `<rect x="${x}" y="${y}" width="18" height="${h-p-y}" rx="3" fill="#087f8c"/>
+          <text x="${x+5}" y="${h-8}" font-size="10" fill="#64748b">${i+1}</text>`;
       }).join("");
-      const pts = vals.map((_,i)=>[p+9+i*30,h-p-(Math.sin(i/1.9)+1.35)/2.75*(h-2*p)]);
-      const path = pts.map((p,i)=>(i ? "L" : "M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+      const growth = vals.map((_,i)=> (Math.sin(i/1.9)+1.35)/2.75);
+      const pts = growth.map((v,i)=>[p+9+i*29.5,h-p-v*(h-2*p)]);
+      const path = smoothPath(pts);
       byId("barChart").innerHTML = `
         ${[0,1,2].map(i=>`<line x1="${p}" x2="${w-p}" y1="${p+i*(h-2*p)/2}" y2="${p+i*(h-2*p)/2}" stroke="#e5ebf3"/>`).join("")}
+        <circle cx="${p}" cy="17" r="4" fill="#087f8c"/><text x="${p+10}" y="21" class="legend-text">月度金额</text>
+        <line x1="124" x2="148" y1="17" y2="17" stroke="#c20f1f" stroke-width="2.5"/><circle cx="136" cy="17" r="3" fill="#fff" stroke="#c20f1f" stroke-width="2"/><text x="154" y="21" class="legend-text">环比增幅</text>
         ${bars}
-        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="2.5"/>
-        ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff" stroke="#c20f1f" stroke-width="2"/>`).join("")}
-        <text x="298" y="22" font-size="12" fill="#c20f1f">环比速度</text>`;
+        <path d="${path}" fill="none" stroke="#c20f1f" stroke-width="2.6"/>
+        ${pts.map((pt,i)=>`<circle cx="${pt[0]}" cy="${pt[1]}" r="${i===pts.length-1 ? 4.5 : 3.4}" fill="#fff" stroke="#c20f1f" stroke-width="2"/>`).join("")}
+        ${pts.filter((_,i)=>[2,5,8,11].includes(i)).map((pt,i)=>`<text x="${pt[0]-10}" y="${pt[1]-9}" font-size="10" fill="#c20f1f">${["+4.8%","+7.1%","+3.2%","+5.6%"][i]}</text>`).join("")}`;
     }
 
     function renderRank(){
       const m = metric();
+      const compareLabel = mainCompareLabel(m);
+      const totalValue = m.products.reduce((sum,r)=>sum+r[2],0);
+      const totalChange = m.products.reduce((sum,r)=>sum+r[3],0);
       byId("rankMeta").textContent = state.scope === "oic" ? "按产品层级排序，可筛选客户" : "按同层级单位排序，可对比贡献";
-      byId("rankTable").innerHTML = `<tr><th>Rank</th><th>产品/来源</th><th>余额/收入</th><th>较上月</th><th>增幅</th></tr>` +
+      byId("rankTable").innerHTML = `<tr><th>序号</th><th>产品/来源</th><th>余额/收入</th><th>${compareLabel}</th><th>增幅</th></tr>` +
         m.products.map((r,i)=>{
           const selected = state.product && state.product.code === r[0] ? " selected" : "";
           return `<tr data-row="product" data-code="${r[0]}" class="${selected}">
@@ -776,47 +881,47 @@
             <td class="bar-wrap"><span class="bar-bg ${r[3]<0?"down":""}" style="width:${Math.min(Math.abs(r[3])*42,96)}px"></span><span class="bar-text ${cls(r[3])}">${money(r[3])}</span></td>
             <td class="${cls(r[4])}">${r[4]}</td>
           </tr>`;
-        }).join("");
+        }).join("") +
+        `<tr class="total-row"><td>合计</td><td>全部产品</td><td>${totalValue.toFixed(2)}</td><td class="${cls(totalChange)}">${money(totalChange)}</td><td>-</td></tr>`;
       document.querySelectorAll('tr[data-row="product"]').forEach(row => row.onclick = () => selectProduct(row.dataset.code));
     }
 
     function renderCustomers(){
       const m = metric();
+      const compareLabel = mainCompareLabel(m);
       const productName = state.product ? ` · ${state.product.name}` : "";
+      const rows = m.customers.map((c,i)=>{
+        const val = state.metric === "fee" ? .16-i*.018 : state.metric === "nii" ? .12-i*.011 : 7.08-i*.58;
+        const chg = state.metric === "fee" ? .057-i*.005 : .57-i*.05;
+        const share = 1.39-i*.13;
+        return {c,i,val,chg,share};
+      });
       byId("customerTitle").textContent = `${m.customer}${productName}`;
       byId("customerMeta").textContent = "金额单位与当前指标一致，Demo 展示前 6 名";
-      byId("customerTable").innerHTML = `<tr><th>Rank</th><th>客户名称</th><th>类型</th><th>行业</th><th>${m.name}</th><th>较上月</th><th>占比</th></tr>` +
-        m.customers.map((c,i)=>{
+      byId("customerTable").innerHTML = `<tr><th>序号</th><th>客户编号</th><th>客户名称</th><th>类型</th><th>行业</th><th>${m.name}</th><th>${compareLabel}</th><th>占比</th></tr>` +
+        rows.map(({c,i,val,chg,share})=>{
           const selected = state.customer === c ? " selected" : "";
-          const val = state.metric === "fee" ? .16-i*.018 : 7.08-i*.58;
-          const chg = .57-i*.05;
           return `<tr data-row="customer" data-customer="${c}" class="${selected}">
-            <td>${i+1}</td><td>${c}</td><td>${i<4?"Corporate":"SME"}</td>
+            <td>${i+1}</td><td>${customerIds[i]}</td><td>${c}</td><td>${i<4?"Corporate":"SME"}</td>
             <td>${["Manufacturing","Trading","Real Estate","Logistics","Financial Services","Retail"][i]}</td>
-            <td>${val.toFixed(2)}</td><td class="${cls(chg)}">${money(chg)}</td><td>${(1.39-i*.13).toFixed(2)}%</td>
+            <td>${val.toFixed(2)}</td><td class="${cls(chg)}">${money(chg)}</td><td>${share.toFixed(2)}%</td>
           </tr>`;
-        }).join("");
+        }).join("") +
+        `<tr class="total-row"><td>合计</td><td>-</td><td>Top6 客户合计</td><td>-</td><td>-</td><td>${rows.reduce((s,r)=>s+r.val,0).toFixed(2)}</td><td class="pos">${money(rows.reduce((s,r)=>s+r.chg,0))}</td><td>${rows.reduce((s,r)=>s+r.share,0).toFixed(2)}%</td></tr>`;
       document.querySelectorAll('tr[data-row="customer"]').forEach(row => row.onclick = () => selectCustomer(row.dataset.customer));
-    }
-
-    function renderAlerts(){
-      byId("alerts").innerHTML = metric().alerts.map((a,i)=>`<div class="alert"><b>${["口径提示","经营异动","下钻建议"][i]}</b>${a}</div>`).join("");
     }
 
     function contextObject(){
       const m = metric();
       return {
-        module:"OIC_DASHBOARD",
         date:byId("dateInput").value,
         scope:state.scope.toUpperCase(),
-        oic_id:byId("oicInput").value,
+        ee:byId("oicInput").value,
         metric_code:m.code,
         metric_name:m.name,
-        selected_visual:state.customer ? "customer_topn" : state.product ? "product_rank" : "kpi_card",
         product_code:state.product ? state.product.code : null,
-        product_name:state.product ? state.product.name : null,
-        customer_name:state.customer,
-        currency:byId("currencySelect").value
+        product_name:state.product ? state.product.name : "全部产品",
+        customer_name:state.customer || "未选中"
       };
     }
 
@@ -825,40 +930,37 @@
       const ctx = contextObject();
       byId("ctxGrid").innerHTML = [
         ["指标",ctx.metric_name],
-        ["范围",`${ctx.scope} / ${ctx.oic_id}`],
         ["日期",ctx.date],
-        ["产品",ctx.product_name || "全部产品"],
-        ["客户",ctx.customer_name || "未选中"],
-        ["币种",ctx.currency]
-      ].map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
-      byId("ctxCode").textContent = `metric_code=${ctx.metric_code}${ctx.product_code ? ", product_code="+ctx.product_code : ""}${ctx.customer_name ? ", customer="+ctx.customer_name : ""}`;
-      let title = ctx.customer_name ? `客户贡献分析：${ctx.customer_name}` : ctx.product_name ? `产品贡献分析：${ctx.product_name}` : `${m.name}总览分析`;
-      let second = state.action === "report"
-        ? "当前 analysis_pack 可传入生成报告模块，形成经营亮点、经营关注和证据口径。"
-        : state.action === "filter"
-        ? "助手已生成 filter_request，正式环境中由前端更新上下文并重新调用指标服务。"
-        : state.action === "rank"
-        ? "产品 Rank 展示当前指标的主要拉动和拖累来源，可进一步点击产品定位客户贡献。"
-        : state.action === "top"
-        ? "客户 TopN 用于识别核心贡献客户和集中度，客户级数据应记录访问审计。"
-        : m.insight;
-      byId("analysisBox").innerHTML = `<h3>${title}</h3>
-        <p>当前${m.name}为 <b>${m.value.toFixed(2)}${m.unit}</b>，较上月 <b>${money(m.m)}</b>，增幅 <b class="${cls(m.mp)}">${m.mp}</b>。</p>
-        <p>${second}</p>
-        <p>建议先看产品贡献，再看客户 TopN；如需正式材料，可直接生成 OIC 摘要。</p>`;
-      const actions = [
-        ["drivers","分析变动原因","产品、客户、时间三维归因"],
-        ["rank","查看产品 Rank","定位拉动和拖累项"],
-        ["top","查看 Top20 客户","识别核心贡献客户"],
-        ["report","生成 OIC 摘要","输出可复用报告段落"]
+        ["产品",ctx.product_name],
+        ["访问编号",ctx.ee],
+        ["客户",ctx.customer_name]
+      ].map(x=>`<div><span>${x[0]}</span><b title="${x[1]}">${x[1]}</b></div>`).join("");
+      byId("ctxNote").textContent = `已按 ${ctx.scope} 范围同步看板选择，金额均为港币等值。`;
+      byId("analysisBox").innerHTML = `<h3>三类能力入口</h3>
+        <div class="module-list">
+          <div class="module-row"><b>查询数据</b><span>输入时间、指标、机构、客户或产品条件，获取相关业绩数据、趋势、排名和贡献拆解。</span></div>
+          <div class="module-row"><b>生成报告</b><span>复用当前看板的指标、产品、客户和图表上下文，形成经营摘要、归因结论和汇报材料。</span></div>
+          <div class="module-row"><b>知识问答</b><span>解释指标口径、产品定义、系统操作和经营分析逻辑，辅助用户理解看板结果。</span></div>
+        </div>`;
+      const questions = [
+        [`为什么${m.name}发生变化？`,`按产品、客户和时间拆解${m.name}变动原因。`],
+        [`查看${ctx.product_name === "全部产品" ? "主要产品" : ctx.product_name}贡献明细`,`把当前产品贡献与客户 TopN 联动起来。`],
+        [`生成${ctx.scope}经营摘要`,`基于当前看板生成可复制报告段落。`],
+        [`${m.name}的指标口径是什么？`,`说明口径、取数范围和常见分析注意点。`]
       ];
-      byId("actionGrid").innerHTML = actions.map(a=>`<button class="action-card" data-action="${a[0]}"><b>${a[1]}</b>${a[2]}</button>`).join("");
-      document.querySelectorAll(".action-card").forEach(btn => btn.onclick = () => selectAction(btn.dataset.action));
+      byId("questionGrid").innerHTML = questions.map(q=>`<button class="question-card" data-question="${q[0]}"><b>${q[0]}</b>${q[1]}</button>`).join("");
+      document.querySelectorAll(".question-card").forEach(btn => btn.onclick = () => {
+        byId("askInput").value = btn.dataset.question;
+        byId("askInput").focus();
+        log(`推荐问题已填入问答框：${btn.dataset.question}`);
+      });
+      renderModuleButtons();
     }
 
     function render(){
       const m = metric();
-      byId("trendTitle").textContent = m.trend;
+      byId("trendTitle").textContent = m.trend.replace("30", state.trendWindow);
+      byId("trendMeta").textContent = `最近 ${state.trendWindow} 天，单位：百万港元`;
       byId("monthTitle").textContent = m.month;
       byId("rankTitle").textContent = m.rank;
       renderKpis();
@@ -866,11 +968,11 @@
       renderBars();
       renderRank();
       renderCustomers();
-      renderAlerts();
       renderAssistant();
     }
 
     function selectMetric(key){
+      dashboardInteraction();
       state.metric = key;
       state.product = null;
       state.customer = null;
@@ -880,6 +982,7 @@
       log(`切换指标：${DATA[key].name}。`);
     }
     function selectProduct(code){
+      dashboardInteraction();
       const r = metric().products.find(x => x[0] === code);
       state.product = {code:r[0], name:r[1]};
       state.customer = null;
@@ -890,54 +993,101 @@
       log(`筛选产品：${r[1]}。`);
     }
     function selectCustomer(name){
+      dashboardInteraction();
       state.customer = name;
       state.action = "customer";
       render();
       flash("contextCard");
       log(`进入客户上下文：${name}。`);
     }
-    function selectAction(action){
-      state.action = action;
-      renderAssistant();
-      if(action === "rank") flash("rankPanel");
-      if(action === "top") flash("customerPanel");
-      if(action === "report" || action === "filter") flash("analysisBox");
-      log(`执行动作：${action}。`);
-    }
 
-    document.querySelectorAll(".seg").forEach(btn => {
+    byId("scopeSelect").onchange = e => {
+      dashboardInteraction();
+      state.scope = e.target.value;
+      byId("pageTitle").textContent = state.scope === "oic" ? "OIC 经营看板" : state.scope === "team" ? "团队经营看板" : "部门经营看板";
+      renderAssistant();
+      flash("contextCard");
+      log(`切换范围：${e.target.options[e.target.selectedIndex].textContent}。`);
+    };
+    ["dateInput","oicInput"].forEach(id => byId(id).onchange = () => renderAssistant());
+    document.querySelectorAll(".range-btn").forEach(btn => {
       btn.onclick = () => {
-        document.querySelectorAll(".seg").forEach(x=>x.classList.remove("active"));
+        state.trendWindow = Number(btn.dataset.window);
+        document.querySelectorAll(".range-btn").forEach(x=>x.classList.remove("active"));
         btn.classList.add("active");
-        state.scope = btn.dataset.scope;
-        byId("pageTitle").textContent = state.scope === "oic" ? "OIC 经营驾驶舱" : state.scope === "team" ? "团队经营驾驶舱" : "部门经营驾驶舱";
-        renderAssistant();
-        log(`切换范围：${btn.textContent}。`);
+        render();
       };
     });
-    byId("viewSelect").onchange = e => {
-      byId("pageTitle").textContent = e.target.value === "OIC" ? "OIC 经营驾驶舱" : "MO 管理层驾驶舱";
-      renderAssistant();
+    document.querySelectorAll(".expand-btn").forEach(btn => {
+      btn.onclick = () => {
+        const panel = byId(btn.dataset.expand);
+        panel.classList.toggle("expanded-panel");
+      };
+    });
+    document.querySelectorAll("#moduleButtons .secondary").forEach(btn => {
+      btn.onclick = () => switchModule(btn.dataset.module, true);
+    });
+    byId("resetCtxBtn").onclick = () => {
+      state.product = null;
+      state.customer = null;
+      state.activeModule = "query";
+      state.moduleLocked = false;
+      render();
+      flash("contextCard");
+      log("已清空产品与客户上下文。");
     };
-    ["dateInput","oicInput","currencySelect"].forEach(id => byId(id).onchange = () => renderAssistant());
+    byId("assistantExpandBtn").onclick = () => {
+      const shell = document.querySelector(".shell");
+      const current = getComputedStyle(shell).getPropertyValue("--assistant-width").trim() || "440px";
+      shell.style.setProperty("--assistant-width", current === "720px" ? "440px" : "720px");
+    };
     byId("sendBtn").onclick = () => {
       const text = byId("askInput").value.trim();
       if(!text) return;
-      state.action = text.includes("报告") ? "report" : text.includes("客户") ? "top" : text.includes("产品") || text.includes("贸易融资") ? "rank" : "drivers";
+      if(text.includes("报告")) switchModule("report", true);
+      else if(text.includes("口径") || text.includes("是什么")) switchModule("knowledge", true);
+      else switchModule("query", false);
       if(text.includes("贸易融资") && state.metric === "loan"){
         selectProduct("MA_M111_8");
       }else{
-        renderAssistant();
         flash("analysisBox");
       }
       log(`自然语言追问：${text}`);
       byId("askInput").value = "";
     };
     byId("askInput").addEventListener("keydown", e => { if(e.key === "Enter") byId("sendBtn").click(); });
-    byId("filterBtn").onclick = () => selectAction("filter");
-    byId("reportBtn").onclick = () => selectAction("report");
-    byId("detailBtn").onclick = () => { flash("customerPanel"); log("已附加产品 Rank 和客户 TopN 明细。"); };
 
+    function initAssistantResizer(){
+      const shell = document.querySelector(".shell");
+      const resizer = byId("assistantResizer");
+      let dragging = false;
+      const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
+      const setWidth = width => shell.style.setProperty("--assistant-width", `${clamp(width,320,760)}px`);
+      resizer.addEventListener("pointerdown", event => {
+        dragging = true;
+        resizer.classList.add("dragging");
+        resizer.setPointerCapture(event.pointerId);
+        document.body.style.userSelect = "none";
+      });
+      resizer.addEventListener("pointermove", event => {
+        if(!dragging) return;
+        const shellRect = shell.getBoundingClientRect();
+        setWidth(shellRect.right - event.clientX);
+      });
+      const stop = event => {
+        if(!dragging) return;
+        dragging = false;
+        resizer.classList.remove("dragging");
+        document.body.style.userSelect = "";
+        if(event.pointerId !== undefined && resizer.hasPointerCapture(event.pointerId)){
+          resizer.releasePointerCapture(event.pointerId);
+        }
+      };
+      resizer.addEventListener("pointerup", stop);
+      resizer.addEventListener("pointercancel", stop);
+    }
+
+    initAssistantResizer();
     render();
   </script>
 </body>
